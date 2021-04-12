@@ -9,30 +9,13 @@ from graph_plot import plot_update
 
 class Graph():
 
-    def __init__(self, pos = None, edge_list = None, rigid_edge = None):
+    def __init__(self, pos, edge_list, rigid_edge = None):
         
         self.dim = 2
 
-        if pos is None:
-            self.pos = {
-                0: (1, 1),
-                1: (4, 1),
-                2: (1, 5),
-                3: (4, 5),
-                }
-        else:
-            self.pos = pos
+        self.pos = pos
         
-        if edge_list is None:   
-            self.edge_list = {
-                0: (0,1),
-                1: (0,2),
-                2: (0,3),
-                3: (1,3),
-                4: (2,3),
-                } 
-        else:
-            self.edge_list = edge_list   
+        self.edge_list = edge_list   
 
         if rigid_edge is None:
             self.rigid_edge = None
