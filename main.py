@@ -1,13 +1,15 @@
 #PYTHON IMPORTS
 import matplotlib.pyplot as plt
+import random
 
 #LOCAL IMPORTS
-from graphs import Graph, Analysis
+from graphs import Graph, generate_graph
+from analysis import Analysis
 from graph_plot import plot
 
 
 # Define starting
-pos = {
+point_list = {
     0: (1, 1),
     1: (4, 1),
     2: (1, 5),
@@ -25,9 +27,14 @@ edge_list = {
     6: (3,4),
     } 
 
-G1 = Graph(pos = pos, edge_list = edge_list)
+random.seed(10)
+gen_size = 15
 
-pos_guess = {
+point_list, edge_list = generate_graph(n = gen_size)
+
+G1 = Graph(pos = point_list, edge_list = edge_list)
+
+point_guess = {
     0: (1, 1),
     1: (4, 1),
     2: (6, -5),
@@ -35,11 +42,13 @@ pos_guess = {
     4: (-6, 12.1),
     } 
 
-G2 = Graph(pos = pos_guess, edge_list=edge_list,rigid_edge = [0])
+point_guess,_ = generate_graph(n = gen_size)
+
+G2 = Graph(pos = point_guess, edge_list=edge_list,rigid_edge = [0])
 
 fig,ax = plot(G1,G2)
 
-A = Analysis(G2, n=10)
+A = Analysis(G2, n=100)
 A.iterator(G1,G2)
 
 input("Press [enter] to finish.")
