@@ -1,6 +1,7 @@
 #PYTHON IMPORTS
 import numpy as np
 from jax import value_and_grad
+import copy
 
 #LOCAL IMPORTS
 from graph_plot import plot_update
@@ -13,8 +14,10 @@ class Analysis():
         self.n = n #iterations
         self.theta = np.array([val for key,val in g.pos.items() if key not in g.rigid_node]).flatten()
 
-        self.abs_error_limit = 0.05
+        self.abs_error_limit = 1e-6
         self.rel_error_limit = 0.001
+
+        self.saved_iterations = {}
 
     def iterator(self,g1,g2):
         
@@ -34,21 +37,21 @@ class Analysis():
             
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
-            #print("theta_old", self.theta)
-            self.theta -= np.linalg.inv(J_red).dot(f_x_red)
-            #print("theta_new", self.theta)
-
+            p = np.linalg.inv(J_red).dot(f_x_red)
+            alpha = self.backtrack(i, p, f_x_red, J_red)
+            
+            self.theta -= alpha*np.linalg.inv(J_red).dot(f_x_red)
             self.update_pos(g2)
 
-            plot_update(g1,g2,i)
-
             abs_error, edge_error = self.check_error(g1,g2)
+            self.saved_iterations[i] = (copy.deepcopy(g2), abs_error)
 
             if abs_error < self.abs_error_limit:
                 print("CONVERGED")
                 break
             else:
                  print("NOT CONVERGED, largest error on {} : {} m".format(edge_error,abs_error))
+                 plot_update(g1,g2,i)
             
     def find_coords(self,g,edge):
         x_start, y_start = np.array(g.pos[edge[0]])
@@ -82,7 +85,6 @@ class Analysis():
                 count += 1
 
     def check_error(self,g1,g2):
-        
         g2.lengths = g2.calc_edge_len()
 
         max_abs_error = 0
@@ -98,3 +100,9 @@ class Analysis():
                 max_error_edge = edge
         
         return max_abs_error, max_error_edge
+
+    def backtrack(self,i, p, f_x, J):
+        print(sum(f_x**2), 0.5*sum(J.dot(f_x)**2))
+        alpha = [0.01,0.01, 0.05, 0.1, 0.4, 0.4, 0.4, 0.4, 0.4, 1, 0.01, 0.1, 0.5, 0.99, 1, 1, 1, 1]
+        return alpha[i]
+        #return 1
