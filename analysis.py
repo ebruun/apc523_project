@@ -1,6 +1,6 @@
 #PYTHON IMPORTS
 import numpy as np
-from jax import value_and_grad
+from autograd import value_and_grad
 import copy
 
 #LOCAL IMPORTS

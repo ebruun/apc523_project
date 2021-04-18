@@ -46,7 +46,7 @@ A.iterator(G1,G2)
 # 4. Output
 ##########################################################
 #plot_iterations(G1, A.saved_iterations)
-plot_animations(G1, A.saved_iterations, 'output/without_backtrack.gif')
+plot_animations(G1, A.saved_iterations, 'outputs/without_backtrack.gif')
 
 input("Press [enter] to finish.")
 
