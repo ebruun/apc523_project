@@ -8,14 +8,15 @@ from graph_plot import plot_update
 
 class Analysis():
 
-    def __init__(self, g, n=10, btrack = True):
+    def __init__(self, g, max_iter=10, btrack = True):
         self.dim = 2
         self.backtrack_on = btrack
 
-        self.n = n #iterations
-        self.theta = np.array([val for key,val in g.pos.items() if key not in g.rigid_node]).flatten()
+        self.n = max_iter #iterations
+        self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
 
-        self.abs_error_limit = 1e-6
+        self.max_memb_err = 1e-6
+        self.max_err = 1e-6
         self.rel_error_limit = 0.001
 
         self.saved_iterations = {}
@@ -43,26 +44,29 @@ class Analysis():
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
             p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
 
-            alpha = self.backtrack(g2, L, p, self.theta, f_x_red, J_red)
+            alpha, err = self.backtrack(g2, L, p, self.theta, f_x_red, J_red)
             
             self.theta -= alpha*p
-            g2.pos = self.update_pos(g2, self.theta)
+            g2.vertex_list = self.update_pos(g2, self.theta)
 
-            abs_error, in_edge = self.check_error(g1,g2)
-            self.saved_iterations[i+1] = (copy.deepcopy(g2), abs_error)
+            self.saved_iterations[i+1] = (copy.deepcopy(g2), err)
 
-            if abs_error < self.abs_error_limit:
-                print("CONVERGED")
+            max_memb_err, in_edge = self.err_member_len(g1,g2)
+            
+            #if max_memb_err < self.max_memb_err:
+            if err < self.max_err:
+                print("CONVERGED, sum|f(x)|^2 = {:.3e}".format(err))
                 break
             else:
-                 print("NOT CONVERGED, largest error on {} : {:.3e} m".format(in_edge,abs_error))
+                 print("NOT CONVERGED, sum|f(x)|^2 = {:.3e}".format(err))
+                 print("largest error on edge {} : {:.3e} m".format(in_edge,max_memb_err))
                  plot_update(g1,g2,i)
     
 
 
 
     def find_coords(self,g2):
-        a = [[g2.pos[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
+        a = [[g2.vertex_list[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
         return np.array(a)
 
 
@@ -100,9 +104,9 @@ class Analysis():
         
         """
         count = 0
-        pos_temp = copy.deepcopy(g.pos)
+        pos_temp = copy.deepcopy(g.vertex_list)
 
-        for node,coord in g.pos.items():
+        for node,coord in g.vertex_list.items():
             if node not in g.rigid_node:
                 pos_temp[node] = (x[count*self.dim], x[count*self.dim + 1])
                 count += 1
@@ -110,7 +114,7 @@ class Analysis():
         return pos_temp
         
 
-    def check_error(self,g1,g2):
+    def err_member_len(self,g1,g2):
         """find maximum absolute length error"""
 
         g2.lengths = g2.calc_edge_len()
@@ -133,12 +137,12 @@ class Analysis():
     def backtrack(self,g2, L, p, theta, f_x_start, J):
         """reduce the newton step until error is less than previous"""
 
+        err1 = sum(f_x_start**2)
+        err2 = sum(f_x_start**2)
+
         if self.backtrack_on:
             g = copy.deepcopy(g2)
             alpha = 1
-            err1 = sum(f_x_start**2)
-            err2 = sum(f_x_start**2)
-
             theta_start = copy.deepcopy(theta)
             theta = 0
 
@@ -147,7 +151,7 @@ class Analysis():
                 alpha = (1/2)**cnt
                 theta = theta_start - alpha*p 
 
-                g.pos = self.update_pos(g, theta)
+                g.vertex_list = self.update_pos(g, theta)
 
                 C = self.find_coords(g)
                 f_x = np.zeros(g.G.number_of_edges())
@@ -159,9 +163,9 @@ class Analysis():
                     f_x[num] = self.calc_f_x(coords,L_target)
 
                 err2 = sum(f_x**2)
-                print("--backtrack, alpha (1/2)^{}: err = {:.3e},{:.3e}".format(cnt, err1, err2))
+                print("--btrack, a = (1/2)^{}: |f(x)^2| = {:.2e}, |f(x+ap)^2| = {:.2e}".format(cnt, err1, err2))
 
                 cnt = cnt + 1
-            return alpha
+            return alpha, err2
         else:
-            return 1
+            return 1, err1

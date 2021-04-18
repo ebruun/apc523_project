@@ -8,12 +8,11 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 class Graph():
 
-    def __init__(self, pos, edge_list, rigid_edge = None):
+    def __init__(self, vertex_list, edge_list, rigid_edge = None):
         
         self.dim = 2
 
-        self.pos = pos
-        
+        self.vertex_list = vertex_list
         self.edge_list = edge_list   
 
         if rigid_edge is None:
@@ -29,10 +28,10 @@ class Graph():
     def create_graph(self):
         g = nx.Graph()
 
-        g.add_nodes_from(self.pos.keys())
+        g.add_nodes_from(self.vertex_list.keys())
         g.add_edges_from(self.edge_list.values())
 
-        for n, p in self.pos.items():
+        for n, p in self.vertex_list.items():
             g.nodes[n]['pos'] = p
 
         return g
@@ -40,15 +39,17 @@ class Graph():
     def calc_edge_len(self):
         lengths={}
         for edge in self.edge_list.values():
-            start = np.array(self.pos[edge[0]])
-            end = np.array(self.pos[edge[1]])
+            start = np.array(self.vertex_list[edge[0]])
+            end = np.array(self.vertex_list[edge[1]])
 
             lengths[edge] = np.linalg.norm(start-end)
         
         return lengths
 
 
-def generate_graph(n = 10):
+def generate_graph(n = 10, fac = 1):
+
+    """generate a random graph but start with a triangle"""
     
     # points = np.random.rand(30, 2)
     # hull = ConvexHull(points)
