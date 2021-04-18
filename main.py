@@ -81,12 +81,12 @@ G2 = Graph(pos = point_guess, edge_list=edge_list,rigid_edge = [0])
 
 fig,ax = plot(G1,G2)
 
-A = Analysis(G2, n=100)
+A = Analysis(G2, n=100, btrack = False)
 A.iterator(G1,G2)
 
 
 #plot_iterations(G1, A.saved_iterations)
-plot_animations(G1, A.saved_iterations)
+plot_animations(G1, A.saved_iterations, 'without_backtrack.gif')
 
 
 input("Press [enter] to finish.")

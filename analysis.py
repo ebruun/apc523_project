@@ -8,8 +8,9 @@ from graph_plot import plot_update
 
 class Analysis():
 
-    def __init__(self, g, n=10):
+    def __init__(self, g, n=10, btrack = True):
         self.dim = 2
+        self.backtrack_on = btrack
 
         self.n = n #iterations
         self.theta = np.array([val for key,val in g.pos.items() if key not in g.rigid_node]).flatten()
@@ -20,50 +21,64 @@ class Analysis():
         self.saved_iterations = {}
 
     def iterator(self,g1,g2):
+
+        self.saved_iterations[0] = (copy.deepcopy(g2), 0)
+        L = self.find_lengths(g1,g2) #target lengths
         
         for i in range(self.n):
 
             print("\nIteration:", i)
-            #print(g2.pos)
+
+            C = self.find_coords(g2) #coordinates of edges (as a 2x2 matrix)
             
             J = np.zeros((g1.G.number_of_edges(),2*g1.G.number_of_nodes()))
             f_x = np.zeros(g1.G.number_of_edges())
 
             for num,edge in g2.edge_list.items():
-                coords = self.find_coords(g2,edge) #current coordinates of edge
-                L_target = g1.lengths[tuple(edge)] #correct length
+                coords = C[num].ravel()
+                L_target = L[num]
 
-                f_x[num],J[num,self.map_dof(edge)] = value_and_grad(self.calc_f_x,0)(coords,L_target) 
+                f_x[num],J[num,self.map_dof(edge)] = value_and_grad(self.calc_f_x,0)(coords,L_target) #0 means only coords tracked
             
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
+            p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
 
-            p = np.linalg.inv(J_red).dot(f_x_red)
-            alpha = self.backtrack(i, p, f_x_red, J_red)
+            alpha = self.backtrack(g2, L, p, self.theta, f_x_red, J_red)
             
-            self.theta -= alpha*np.linalg.inv(J_red).dot(f_x_red)
-            self.update_pos(g2)
+            self.theta -= alpha*p
+            g2.pos = self.update_pos(g2, self.theta)
 
-            abs_error, edge_error = self.check_error(g1,g2)
-            self.saved_iterations[i] = (copy.deepcopy(g2), abs_error)
+            abs_error, in_edge = self.check_error(g1,g2)
+            self.saved_iterations[i+1] = (copy.deepcopy(g2), abs_error)
 
             if abs_error < self.abs_error_limit:
                 print("CONVERGED")
                 break
             else:
-                 print("NOT CONVERGED, largest error on {} : {} m".format(edge_error,abs_error))
+                 print("NOT CONVERGED, largest error on {} : {:.3e} m".format(in_edge,abs_error))
                  plot_update(g1,g2,i)
-            
-    def find_coords(self,g,edge):
-        x_start, y_start = np.array(g.pos[edge[0]])
-        x_end, y_end = np.array(g.pos[edge[1]])
-        return np.array([x_start, y_start, x_end, y_end], dtype=float)
+    
+
+
+
+    def find_coords(self,g2):
+        a = [[g2.pos[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
+        return np.array(a)
+
+
+    def find_lengths(self,g1,g2):
+        a = [g1.lengths[tuple(edge)] for _,edge in g2.edge_list.items()]      
+        return np.array(a)  
+
 
     def calc_f_x(self,x,L):
         x_start, y_start, x_end, y_end = x
         return (x_start - x_end)**2 + (y_start - y_end)**2 - L**2
     
+
     def map_dof(self,edge):
         return [edge[0]*self.dim, edge[0]*self.dim + 1, edge[1]*self.dim, edge[1]*self.dim + 1]
+
 
     def reduce_jacobian(self,J,f_x,g2):
         J_red = np.delete(J,g2.rigid_edge,axis=0) #column reduce
@@ -77,14 +92,27 @@ class Analysis():
         f_x_red = np.delete(f_x, g2.rigid_edge)
         return J_red, f_x_red
 
-    def update_pos(self,g2):
+
+    def update_pos(self,g,x):
+        """ take a reduced nodal position vector x and map to position dictionary
+        
+        x is in the form: [x0, y0, x1, y1,....xn, yn]
+        
+        """
         count = 0
-        for node,coord in g2.pos.items():
-            if node not in g2.rigid_node:
-                g2.pos[node] = (self.theta[count*self.dim], self.theta[count*self.dim + 1])
+        pos_temp = copy.deepcopy(g.pos)
+
+        for node,coord in g.pos.items():
+            if node not in g.rigid_node:
+                pos_temp[node] = (x[count*self.dim], x[count*self.dim + 1])
                 count += 1
 
+        return pos_temp
+        
+
     def check_error(self,g1,g2):
+        """find maximum absolute length error"""
+
         g2.lengths = g2.calc_edge_len()
 
         max_abs_error = 0
@@ -101,8 +129,39 @@ class Analysis():
         
         return max_abs_error, max_error_edge
 
-    def backtrack(self,i, p, f_x, J):
-        print(sum(f_x**2), 0.5*sum(J.dot(f_x)**2))
-        alpha = [0.01,0.01, 0.05, 0.1, 0.4, 0.4, 0.4, 0.4, 0.4, 1, 0.01, 0.1, 0.5, 0.99, 1, 1, 1, 1]
-        return alpha[i]
-        #return 1
+
+    def backtrack(self,g2, L, p, theta, f_x_start, J):
+        """reduce the newton step until error is less than previous"""
+
+        if self.backtrack_on:
+            g = copy.deepcopy(g2)
+            alpha = 1
+            err1 = sum(f_x_start**2)
+            err2 = sum(f_x_start**2)
+
+            theta_start = copy.deepcopy(theta)
+            theta = 0
+
+            cnt = 0
+            while err2 >= err1:
+                alpha = (1/2)**cnt
+                theta = theta_start - alpha*p 
+
+                g.pos = self.update_pos(g, theta)
+
+                C = self.find_coords(g)
+                f_x = np.zeros(g.G.number_of_edges())
+
+                for num,edge in g.edge_list.items():
+                    coords = C[num].ravel()
+                    L_target = L[num]
+
+                    f_x[num] = self.calc_f_x(coords,L_target)
+
+                err2 = sum(f_x**2)
+                print("--backtrack, alpha (1/2)^{}: err = {:.3e},{:.3e}".format(cnt, err1, err2))
+
+                cnt = cnt + 1
+            return alpha
+        else:
+            return 1

@@ -68,7 +68,7 @@ def plot_iterations(g1, saved):
     plt.show()
 
 
-def plot_animations(g1, saved):
+def plot_animations(g1, saved, name):
 
     fig, ax = plt.subplots(figsize=(9, 9))
 
@@ -77,15 +77,15 @@ def plot_animations(g1, saved):
         nx.draw(g1.G, g1.pos, with_labels=True, font_weight='bold', ax=ax)
         nx.draw(saved[i][0].G, saved[i][0].pos, with_labels=True, font_weight='bold',edge_color="r", ax=ax)
 
-        ax.set_xlim([-10, 10])
-        ax.set_ylim([-10, 10])
+        ax.set_xlim([-10, 20])
+        ax.set_ylim([-10, 20])
         limits=plt.axis('on') # turns on axis
 
         ax.set_title("Iteration {}, Max. Abs. Error = {:.5f} m".format(i,saved[i][1]), fontweight="bold")
 
     anim = FuncAnimation(fig, animate,frames=len(saved), interval=500, repeat=True)
 
-    anim.save('network_converge.gif', writer='imagemagick')
+    anim.save(name, writer='imagemagick')
 
 if __name__ == '__main__':
     plot_animations()
