@@ -8,7 +8,7 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 class Graph():
 
-    def __init__(self, vertex_list, edge_list, rigid_edge = None):
+    def __init__(self, vertex_list, edge_list, rigid_edge = None, edge_lengths = False):
         
         self.dim = 2
 
@@ -23,7 +23,11 @@ class Graph():
             self.rigid_node = np.array([val for key,val in self.edge_list.items() if key in self.rigid_edge]).flatten()
 
         self.G = self.create_graph()
-        self.lengths = self.calc_edge_len()
+
+        if edge_lengths:
+            self.lengths = {values:edge_lengths[keys] for keys,values in edge_list.items()}
+        else:
+            self.lengths = self.calc_edge_len()
 
     def create_graph(self):
         g = nx.Graph()
@@ -78,7 +82,7 @@ def generate_graph(n = 10, fac = 1):
         }
 
     for i in range(3,n):
-        new_pnt = (round(random.random()*5,1),round(random.random()*5,1))
+        new_pnt = (round(random.random()*fac,1),round(random.random()*fac,1))
         points[i] = new_pnt
 
         l = [*range(0,i)]
@@ -88,6 +92,19 @@ def generate_graph(n = 10, fac = 1):
         edges[len(edges)] = (i,new_edges[1])
 
     return points, edges
+
+def generate_graph_guess(n, vertex_list, fac = 1):
+
+    points = {
+        0: vertex_list[0],
+        1: vertex_list[1],
+    }
+
+    for i in range(2,n):
+        new_pnt = (round(random.random()*fac,1),round(random.random()*fac,1))
+        points[i] = new_pnt
+
+    return points
 
 
 

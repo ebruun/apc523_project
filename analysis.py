@@ -8,7 +8,7 @@ from graph_plot import plot_update
 
 class Analysis():
 
-    def __init__(self, g, max_iter=10, btrack = True):
+    def __init__(self, g, max_iter=10, btrack = False):
         self.dim = 2
         self.backtrack_on = btrack
 
@@ -20,6 +20,9 @@ class Analysis():
         self.rel_error_limit = 0.001
 
         self.saved_iterations = {}
+
+        if btrack:
+            self.btrack = btrack
 
     def iterator(self,g1,g2):
 
@@ -42,9 +45,15 @@ class Analysis():
                 f_x[num],J[num,self.map_dof(edge)] = value_and_grad(self.calc_f_x,0)(coords,L_target) #0 means only coords tracked
             
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
-            p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
 
-            alpha, err = self.backtrack(g2, L, p, self.theta, f_x_red, J_red)
+            if i < 0:
+                p = f_x_red.T.dot(J_red)
+                p = (p / np.linalg.norm(p))
+                alpha = 1.0
+                err = 0.5*f_x_red.T.dot(f_x_red)
+            else:
+                p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
+                alpha, err = self.backtrack(g2, L, p, self.theta, f_x_red)
             
             self.theta -= alpha*p
             g2.vertex_list = self.update_pos(g2, self.theta)
@@ -55,12 +64,13 @@ class Analysis():
             
             #if max_memb_err < self.max_memb_err:
             if err < self.max_err:
-                print("CONVERGED, sum|f(x)|^2 = {:.3e}".format(err))
+                print("CONVERGED, 0.5*sum|f(x)|^2 = {:.3e}".format(err))
                 break
             else:
-                 print("NOT CONVERGED, sum|f(x)|^2 = {:.3e}".format(err))
+                 print("NOT CONVERGED, 0.5*sum|f(x)|^2 = {:.3e}".format(err))
                  print("largest error on edge {} : {:.3e} m".format(in_edge,max_memb_err))
                  plot_update(g1,g2,i)
+                 #input("Press [enter] to finish.")
     
 
 
@@ -134,11 +144,16 @@ class Analysis():
         return max_abs_error, max_error_edge
 
 
-    def backtrack(self,g2, L, p, theta, f_x_start, J):
+    def backtrack(self,g2, L, p, theta, f_x_start):
         """reduce the newton step until error is less than previous"""
 
-        err1 = sum(f_x_start**2)
-        err2 = sum(f_x_start**2)
+        err1 = 0.5*f_x_start.T.dot(f_x_start)
+        err2 = 0.5*f_x_start.T.dot(f_x_start)
+
+        factor = 0
+        #factor = 2e-4
+        #factor = 0.29
+
 
         if self.backtrack_on:
             g = copy.deepcopy(g2)
@@ -147,7 +162,7 @@ class Analysis():
             theta = 0
 
             cnt = 0
-            while err2 >= err1:
+            while err2 >= err1*(1 - alpha*factor):
                 alpha = (1/2)**cnt
                 theta = theta_start - alpha*p 
 
@@ -162,8 +177,8 @@ class Analysis():
 
                     f_x[num] = self.calc_f_x(coords,L_target)
 
-                err2 = sum(f_x**2)
-                print("--btrack, a = (1/2)^{}: |f(x)^2| = {:.2e}, |f(x+ap)^2| = {:.2e}".format(cnt, err1, err2))
+                err2 = 0.5*f_x.T.dot(f_x)
+                print("--btrack, a = (1/2)^{}: sum|f(x)^2|*(1 - {}*a) = {:.2e}, sum|f(x+ap)^2| = {:.2e}".format(cnt, factor, err1*(1 - alpha*factor), err2))
 
                 cnt = cnt + 1
             return alpha, err2
