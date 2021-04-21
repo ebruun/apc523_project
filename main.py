@@ -44,7 +44,8 @@ fig,ax = plot(G1,G2)
 ##########################################################
 # 3. Perform Newton-Raphson analysis
 ##########################################################
-A = Analysis(G2, max_iter=200, btrack = True)
+
+A = Analysis(G2, max_iter=200, btrack = "zero")
 A.iterator(G1,G2)
 
 

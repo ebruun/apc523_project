@@ -10,84 +10,111 @@ class Analysis():
 
     def __init__(self, g, max_iter=10, btrack = False):
         self.dim = 2
-        self.backtrack_on = btrack
 
         self.n = max_iter #iterations
         self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
+        self.theta_prev = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
 
         self.max_memb_err = 1e-6
-        self.max_err = 1e-6
-        self.rel_error_limit = 0.001
+        self.max_abs_err = 1e-6
+        self.max_rel_error = 1e-6
+
+        self.err_save = 0
 
         self.saved_iterations = {}
 
-        if btrack:
-            self.btrack = btrack
+        self.btrack = btrack
+        
+        
 
     def iterator(self,g1,g2):
 
         self.saved_iterations[0] = (copy.deepcopy(g2), 0)
-        L = self.find_lengths(g1,g2) #target lengths
+        L = self.lengths_to_array(g1,g2) #target lengths
         
         for i in range(self.n):
 
             print("\nIteration:", i)
 
-            C = self.find_coords(g2) #coordinates of edges (as a 2x2 matrix)
-            
-            J = np.zeros((g1.G.number_of_edges(),2*g1.G.number_of_nodes()))
-            f_x = np.zeros(g1.G.number_of_edges())
-
-            for num,edge in g2.edge_list.items():
-                coords = C[num].ravel()
-                L_target = L[num]
-
-                f_x[num],J[num,self.map_dof(edge)] = value_and_grad(self.calc_f_x,0)(coords,L_target) #0 means only coords tracked
-            
+            f_x, J = self.calc_F(g2,L,autograd=True)
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
             if i < 0:
                 p = f_x_red.T.dot(J_red)
                 p = (p / np.linalg.norm(p))
                 alpha = 1.0
-                err = 0.5*f_x_red.T.dot(f_x_red)
             else:
                 p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
-                alpha, err = self.backtrack(g2, L, p, self.theta, f_x_red)
+                alpha = self.backtrack(g2, L, p, self.theta, f_x)
             
             self.theta -= alpha*p
-            g2.vertex_list = self.update_pos(g2, self.theta)
 
-            self.saved_iterations[i+1] = (copy.deepcopy(g2), err)
+            g2.vertex_list = self.update_vertex_list(g2, self.theta)
+            f_x, _ = self.calc_F(g2,L,autograd=False)
 
-            max_memb_err, in_edge = self.err_member_len(g1,g2)
+            err1 = self.err_cumulative(f_x)
+            err1_rel = self.err_relative(err1)
+
+            err2, in_edge = self.err_member_len(g1,g2)
             
-            #if max_memb_err < self.max_memb_err:
-            if err < self.max_err:
-                print("CONVERGED, 0.5*sum|f(x)|^2 = {:.3e}".format(err))
+            plot_update(g1,g2,i)
+            self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
+            #input("Press [enter] to finish.")
+
+            if err1 < self.max_abs_err and err1_rel < self.max_rel_error:
+                print("CONVERGED AT ROOT")
+                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+                print("Relative error = {:.3e}".format(err1_rel))
                 break
+            elif err1_rel < self.max_rel_error:
+                print("CONVERGED AT MINIMUM")
+                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+                print("Relative error = {:.3e}".format(err1_rel))
+                print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
+                break                
             else:
-                 print("NOT CONVERGED, 0.5*sum|f(x)|^2 = {:.3e}".format(err))
-                 print("largest error on edge {} : {:.3e} m".format(in_edge,max_memb_err))
-                 plot_update(g1,g2,i)
-                 #input("Press [enter] to finish.")
+                print("NOT CONVERGED")
+                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+                print("Relative error = {:.3e}".format(err1_rel))
+                print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
+                 
+                 
     
 
+    def calc_F(self,g,L,autograd = False):
+        """calculate the value of the function, and the gradient if needed"""
+        C = self.coords_to_array(g) #coordinates of edges (as a 2x2 matrix)
+        
+        J = np.zeros((g.G.number_of_edges(),2*g.G.number_of_nodes()))
+        f_x = np.zeros(g.G.number_of_edges())
 
+        for num,edge in g.edge_list.items():
+            coords = C[num].ravel()
+            L_target = L[num]
 
-    def find_coords(self,g2):
+            if autograd:
+                f_x[num],J[num,self.map_dof(edge)] = value_and_grad(self.calc_f_x,0)(coords,L_target) #0 means only coords tracked
+            else:
+                f_x[num] = self.calc_f_x(coords,L_target)    
+
+        return f_x, J
+
+    def calc_f_x(self,x,L):
+        """individual function call"""
+        x_start, y_start, x_end, y_end = x
+        return (x_start - x_end)**2 + (y_start - y_end)**2 - L**2
+
+    def coords_to_array(self,g2):
         a = [[g2.vertex_list[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
         return np.array(a)
 
 
-    def find_lengths(self,g1,g2):
+    def lengths_to_array(self,g1,g2):
         a = [g1.lengths[tuple(edge)] for _,edge in g2.edge_list.items()]      
         return np.array(a)  
 
 
-    def calc_f_x(self,x,L):
-        x_start, y_start, x_end, y_end = x
-        return (x_start - x_end)**2 + (y_start - y_end)**2 - L**2
+
     
 
     def map_dof(self,edge):
@@ -107,14 +134,14 @@ class Analysis():
         return J_red, f_x_red
 
 
-    def update_pos(self,g,x):
+    def update_vertex_list(self,g,x):
         """ take a reduced nodal position vector x and map to position dictionary
         
         x is in the form: [x0, y0, x1, y1,....xn, yn]
         
         """
         count = 0
-        pos_temp = copy.deepcopy(g.vertex_list)
+        pos_temp = g.vertex_list
 
         for node,coord in g.vertex_list.items():
             if node not in g.rigid_node:
@@ -122,7 +149,19 @@ class Analysis():
                 count += 1
 
         return pos_temp
-        
+    
+
+    def err_cumulative(self, f_x):
+        """cumulative squared error for a vector"""
+        return 0.5*f_x.T.dot(f_x)
+
+
+    def err_relative(self, e):
+        """check the different between iterations, set variable for next iteration"""
+        diff = e - self.err_save
+        self.err_save = e
+        return abs(diff)
+
 
     def err_member_len(self,g1,g2):
         """find maximum absolute length error"""
@@ -130,7 +169,7 @@ class Analysis():
         g2.lengths = g2.calc_edge_len()
 
         max_abs_error = 0
-        max_error_edge = (0,0)
+        max_abs_error_edge = (0,0)
 
         for edge,L in g2.lengths.items():
             L_target = g1.lengths[tuple(edge)] #correct length
@@ -147,17 +186,22 @@ class Analysis():
     def backtrack(self,g2, L, p, theta, f_x_start):
         """reduce the newton step until error is less than previous"""
 
-        err1 = 0.5*f_x_start.T.dot(f_x_start)
-        err2 = 0.5*f_x_start.T.dot(f_x_start)
+        err1 = self.err_cumulative(f_x_start)
+        err2 = err1
 
-        factor = 0
-        #factor = 2e-4
-        #factor = 0.29
+        alpha = 1
 
+        if self.btrack:
 
-        if self.backtrack_on:
+            if self.btrack == "zero":
+                factor = 0
+            elif self.btrack == "armijo":
+                factor = 2e-4
+            elif self.btrack == "peterson":
+                factor = 0.29
+
             g = copy.deepcopy(g2)
-            alpha = 1
+
             theta_start = copy.deepcopy(theta)
             theta = 0
 
@@ -166,21 +210,13 @@ class Analysis():
                 alpha = (1/2)**cnt
                 theta = theta_start - alpha*p 
 
-                g.vertex_list = self.update_pos(g, theta)
+                g.vertex_list = self.update_vertex_list(g, theta)
 
-                C = self.find_coords(g)
-                f_x = np.zeros(g.G.number_of_edges())
+                f_x,_= self.calc_F(g,L,autograd=False)
 
-                for num,edge in g.edge_list.items():
-                    coords = C[num].ravel()
-                    L_target = L[num]
-
-                    f_x[num] = self.calc_f_x(coords,L_target)
-
-                err2 = 0.5*f_x.T.dot(f_x)
+                err2 = self.err_cumulative(f_x)
                 print("--btrack, a = (1/2)^{}: sum|f(x)^2|*(1 - {}*a) = {:.2e}, sum|f(x+ap)^2| = {:.2e}".format(cnt, factor, err1*(1 - alpha*factor), err2))
 
-                cnt = cnt + 1
-            return alpha, err2
-        else:
-            return 1, err1
+                cnt += 1
+        
+        return alpha
