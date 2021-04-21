@@ -81,7 +81,7 @@ def plot_animations(g1, saved, name):
         ax.set_ylim([-10, 20])
         limits=plt.axis('on') # turns on axis
 
-        ax.set_title("Iteration {}, sum|f(x)|^2 error  = {:.5f} m".format(i,saved[i][1]), fontweight="bold")
+        ax.set_title("Iteration {}, 0.5*sum|f(x)|^2 error  = {:.5f}".format(i,saved[i][1]), fontweight="bold")
 
     anim = FuncAnimation(fig, animate,frames=len(saved), interval=500, repeat=True)
 

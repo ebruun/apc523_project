@@ -8,10 +8,12 @@ from graph_plot import plot_update
 
 class Analysis():
 
-    def __init__(self, g, max_iter=10, btrack = False):
+    def __init__(self, g, max_iter=10, btrack = False, gradient_steps = 0):
         self.dim = 2
 
         self.n = max_iter #iterations
+        self.grad_steps = gradient_steps
+
         self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
         self.theta_prev = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
 
@@ -39,8 +41,8 @@ class Analysis():
             f_x, J = self.calc_F(g2,L,autograd=True)
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
-            if i < 0:
-                p = f_x_red.T.dot(J_red)
+            if i < self.grad_steps:
+                p = f_x_red.T.dot(J_red) 
                 p = (p / np.linalg.norm(p))
                 alpha = 1.0
             else:
@@ -61,25 +63,10 @@ class Analysis():
             self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
             #input("Press [enter] to finish.")
 
-            if err1 < self.max_abs_err and err1_rel < self.max_rel_error:
-                print("CONVERGED AT ROOT")
-                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
-                print("Relative error = {:.3e}".format(err1_rel))
+            if self.termination(err1, err1_rel, err2, in_edge) > 0:
                 break
-            elif err1_rel < self.max_rel_error:
-                print("CONVERGED AT MINIMUM")
-                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
-                print("Relative error = {:.3e}".format(err1_rel))
-                print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
-                break                
-            else:
-                print("NOT CONVERGED")
-                print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
-                print("Relative error = {:.3e}".format(err1_rel))
-                print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
+
                  
-                 
-    
 
     def calc_F(self,g,L,autograd = False):
         """calculate the value of the function, and the gradient if needed"""
@@ -108,14 +95,11 @@ class Analysis():
         a = [[g2.vertex_list[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
         return np.array(a)
 
-
     def lengths_to_array(self,g1,g2):
         a = [g1.lengths[tuple(edge)] for _,edge in g2.edge_list.items()]      
         return np.array(a)  
 
 
-
-    
 
     def map_dof(self,edge):
         return [edge[0]*self.dim, edge[0]*self.dim + 1, edge[1]*self.dim, edge[1]*self.dim + 1]
@@ -150,37 +134,6 @@ class Analysis():
 
         return pos_temp
     
-
-    def err_cumulative(self, f_x):
-        """cumulative squared error for a vector"""
-        return 0.5*f_x.T.dot(f_x)
-
-
-    def err_relative(self, e):
-        """check the different between iterations, set variable for next iteration"""
-        diff = e - self.err_save
-        self.err_save = e
-        return abs(diff)
-
-
-    def err_member_len(self,g1,g2):
-        """find maximum absolute length error"""
-
-        g2.lengths = g2.calc_edge_len()
-
-        max_abs_error = 0
-        max_abs_error_edge = (0,0)
-
-        for edge,L in g2.lengths.items():
-            L_target = g1.lengths[tuple(edge)] #correct length
-
-            abs_error = abs(L-L_target)
-
-            if abs_error > max_abs_error:
-                max_abs_error = abs_error
-                max_error_edge = edge
-        
-        return max_abs_error, max_error_edge
 
 
     def backtrack(self,g2, L, p, theta, f_x_start):
@@ -220,3 +173,57 @@ class Analysis():
                 cnt += 1
         
         return alpha
+
+#####################################
+
+    def err_cumulative(self, f_x):
+        """cumulative squared error for a vector"""
+        return 0.5*f_x.T.dot(f_x)
+
+
+    def err_relative(self, e):
+        """check the different between iterations, set variable for next iteration"""
+        diff = e - self.err_save
+        self.err_save = e
+        return abs(diff)
+
+
+    def err_member_len(self,g1,g2):
+        """find maximum absolute length error"""
+
+        g2.lengths = g2.calc_edge_len()
+
+        max_abs_error = 0
+        max_abs_error_edge = (0,0)
+
+        for edge,L in g2.lengths.items():
+            L_target = g1.lengths[tuple(edge)] #correct length
+
+            abs_error = abs(L-L_target)
+
+            if abs_error > max_abs_error:
+                max_abs_error = abs_error
+                max_error_edge = edge
+        
+        return max_abs_error, max_error_edge
+
+
+    def termination(self, err1, err1_rel, err2, in_edge):
+
+        if err1 < self.max_abs_err and err1_rel < self.max_rel_error:
+            print("CONVERGED AT ROOT")
+            print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+            print("Relative error = {:.3e}".format(err1_rel))
+            return 1
+        elif err1_rel < self.max_rel_error:
+            print("CONVERGED AT MINIMUM")
+            print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+            print("Relative error = {:.3e}".format(err1_rel))
+            print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
+            return 2                
+        else:
+            print("NOT CONVERGED")
+            print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
+            print("Relative error = {:.3e}".format(err1_rel))
+            print("largest error on edge {} : {:.3e} m".format(in_edge,err2))
+            return 0

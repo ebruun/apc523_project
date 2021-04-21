@@ -19,21 +19,21 @@ gen_size = 6
 
 #vertices, edges = generate_graph(n = gen_size, fac = 1)
 
-vertices = p2
-edges = e2
-edge_lens = [2.0, 2.0, 7/4, 2.0, 197/100, 27/10, 11/5, 29/10, 43/20]
+# vertices = p2
+# edges = e2
+# edge_lens = [2.0, 2.0, 7/4, 2.0, 197/100, 27/10, 11/5, 29/10, 43/20]
 
-G1 = Graph(vertex_list = vertices, edge_list = edges, edge_lengths=edge_lens)
+# G1 = Graph(vertex_list = vertices, edge_list = edges, edge_lengths=edge_lens)
 
-# vertices = p1
-# edges = e1
+vertices = p1
+edges = e1
 
-# G1 = Graph(vertex_list = vertices, edge_list = edges)
+G1 = Graph(vertex_list = vertices, edge_list = edges)
 
 ##########################################################
 # 2. Set initial conditions
 ##########################################################
-vertices_guess = ic2_1
+vertices_guess = ic1_1
 #vertices_guess = generate_graph_guess(n = gen_size, vertex_list = vertices, fac = 5)
 
 G2 = Graph(vertex_list = vertices_guess, edge_list = edges, rigid_edge = [0])
@@ -45,7 +45,7 @@ fig,ax = plot(G1,G2)
 # 3. Perform Newton-Raphson analysis
 ##########################################################
 
-A = Analysis(G2, max_iter=200, btrack = "zero")
+A = Analysis(G2, max_iter=200, btrack = "peterson", gradient_steps = 60)
 A.iterator(G1,G2)
 
 
@@ -53,9 +53,10 @@ A.iterator(G1,G2)
 # 4. Output
 ##########################################################
 #plot_iterations(G1, A.saved_iterations)
-#plot_animations(G1, A.saved_iterations, 'outputs/without_backtrack.gif')
+plot_animations(G1, A.saved_iterations, 'outputs/with_gradient_backtrack_peterson.gif')
 
 input("Press [enter] to finish.")
+
 
 
 
