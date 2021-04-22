@@ -7,8 +7,8 @@ from graphs import Graph, generate_graph, generate_graph_guess
 from analysis import Analysis
 from graph_plot import Plotter
 
-from inputs.input_structure import p1, e1, p2, e2 #pre-defined structures
-from inputs.input_init_conditions import ic1_1, ic1_2, ic2_1 #pre-defined structures
+from inputs.input_structure import p1, e1, p2, e2, p3, e3 #pre-defined structures
+from inputs.input_init_conditions import ic1_1, ic1_2, ic2_1, ic3_1 #pre-defined structures
 
 
 ##########################################################
@@ -25,8 +25,8 @@ gen_size = 20
 
 # G1 = Graph(vertex_list = vertices, edge_list = edges, edge_lengths=edge_lens)
 
-vertices = p1
-edges = e1
+vertices = p3
+edges = e3
 
 G1 = Graph(vertex_list = vertices, edge_list = edges)
 
@@ -34,7 +34,7 @@ G1 = Graph(vertex_list = vertices, edge_list = edges)
 ##########################################################
 # 2. Set initial conditions
 ##########################################################
-vertices_guess = ic1_2
+vertices_guess = ic3_1
 #vertices_guess = generate_graph_guess(n = gen_size, vertex_list = vertices, fac = 5)
 
 G2 = Graph(vertex_list = vertices_guess, edge_list = edges, rigid_edge = [0])
@@ -46,15 +46,17 @@ P.plot_initial(G2)
 ##########################################################
 # 3. Perform Newton-Raphson analysis
 ##########################################################
-A = Analysis(G2, btrack = "peterson", max_iter=100, gradient_steps = 5)
+A = Analysis(btrack = "peterson", max_iter=100, gradient_steps = 0)
 A.iterator(G1,G2, P)
+
+P.error_plot(A.saved_iterations)
 
 
 ##########################################################
 # 4. Output
 ##########################################################
 #plot_iterations(G1, A.saved_iterations)
-#P.plot_animations(A.saved_iterations,'outputs/with_gradient_backtrack_peterson.gif')
+#P.plot_animations(A.saved_iterations,'outputs/simple.gif')
 
 input("Press [enter] to finish.")
 

@@ -5,11 +5,11 @@ import copy
 
 class Analysis():
 
-    def __init__(self, g, btrack = False, max_iter=10, gradient_steps = 0):
+    def __init__(self, btrack = False, max_iter=10, gradient_steps = 0):
         self.dim = 2
 
         self.n = max_iter #iterations
-        self.n_grad_steps = gradient_steps
+        self.n_grad_steps = gradient_steps #iterations to start gradient
 
         self.max_memb_err = 1e-6
         self.max_abs_err = 1e-6
@@ -17,15 +17,22 @@ class Analysis():
 
         self.err_save = 0
 
-        self.saved_iterations = {0:(g, 0)}
-        self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
-  
+        self.saved_iterations = {}
+        
         self.btrack = btrack
+        
         
         
     def iterator(self,g1,g2, Plotter):
 
         L = self.lengths_to_array(g1,g2) #target lengths
+
+        f_x, _ = self.calc_F(g2,L,autograd=False)
+        err1 = self.err_cumulative(f_x)
+
+        #starting
+        self.saved_iterations[0] = (copy.deepcopy(g2), err1)
+        self.theta = np.array([val for key,val in g2.vertex_list.items() if key not in g2.rigid_node]).flatten()
         
         for i in range(self.n):
 
@@ -187,7 +194,7 @@ class Analysis():
         g2.lengths = g2.calc_edge_len()
 
         max_abs_error = 0
-        max_abs_error_edge = (0,0)
+        max_abs_error_edge = (0,1)
 
         for edge,L in g2.lengths.items():
             L_target = g1.lengths[tuple(edge)] #correct length
@@ -196,9 +203,9 @@ class Analysis():
 
             if abs_error > max_abs_error:
                 max_abs_error = abs_error
-                max_error_edge = edge
+                max_abs_error_edge = edge
         
-        return max_abs_error, max_error_edge
+        return max_abs_error, max_abs_error_edge
 
 
     def termination(self, err1, err1_rel, err2, in_edge):
