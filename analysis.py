@@ -3,19 +3,13 @@ import numpy as np
 from autograd import value_and_grad
 import copy
 
-#LOCAL IMPORTS
-from graph_plot import plot_update
-
 class Analysis():
 
-    def __init__(self, g, max_iter=10, btrack = False, gradient_steps = 0):
+    def __init__(self, g, btrack = False, max_iter=10, gradient_steps = 0):
         self.dim = 2
 
         self.n = max_iter #iterations
-        self.grad_steps = gradient_steps
-
-        self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
-        self.theta_prev = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
+        self.n_grad_steps = gradient_steps
 
         self.max_memb_err = 1e-6
         self.max_abs_err = 1e-6
@@ -23,15 +17,14 @@ class Analysis():
 
         self.err_save = 0
 
-        self.saved_iterations = {}
-
+        self.saved_iterations = {0:(g, 0)}
+        self.theta = np.array([val for key,val in g.vertex_list.items() if key not in g.rigid_node]).flatten()
+  
         self.btrack = btrack
         
         
+    def iterator(self,g1,g2, Plotter):
 
-    def iterator(self,g1,g2):
-
-        self.saved_iterations[0] = (copy.deepcopy(g2), 0)
         L = self.lengths_to_array(g1,g2) #target lengths
         
         for i in range(self.n):
@@ -41,10 +34,9 @@ class Analysis():
             f_x, J = self.calc_F(g2,L,autograd=True)
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
-            if i < self.grad_steps:
-                p = f_x_red.T.dot(J_red) 
-                p = (p / np.linalg.norm(p))
-                alpha = 1.0
+            if i < self.n_grad_steps:
+                p = f_x_red.T.dot(J_red) #Gradient step vector
+                alpha = self.backtrack(g2, L, p, self.theta, f_x)
             else:
                 p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
                 alpha = self.backtrack(g2, L, p, self.theta, f_x)
@@ -59,12 +51,13 @@ class Analysis():
 
             err2, in_edge = self.err_member_len(g1,g2)
             
-            plot_update(g1,g2,i)
+            Plotter.plot_update(g2,i)
             self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
-            #input("Press [enter] to finish.")
 
             if self.termination(err1, err1_rel, err2, in_edge) > 0:
                 break
+
+            #input("Press [enter] for next iteration.")
 
                  
 
@@ -168,7 +161,7 @@ class Analysis():
                 f_x,_= self.calc_F(g,L,autograd=False)
 
                 err2 = self.err_cumulative(f_x)
-                print("--btrack, a = (1/2)^{}: sum|f(x)^2|*(1 - {}*a) = {:.2e}, sum|f(x+ap)^2| = {:.2e}".format(cnt, factor, err1*(1 - alpha*factor), err2))
+                print("--btrack, a = (1/2)^{}: 0.5*sum|f(x)^2|*(1 - {}*a) = {:.2e}, 0.5*sum|f(x+ap)^2| = {:.2e}".format(cnt, factor, err1*(1 - alpha*factor), err2))
 
                 cnt += 1
         

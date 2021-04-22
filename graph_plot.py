@@ -3,89 +3,111 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import networkx as nx
 
-import numpy as np
 
+class Plotter():
 
-def plot(*args):
+    def __init__(self, g1):
 
-    plt.ion()
+        self.g1 = g1
 
-    fig, ax = plt.subplots(figsize=(9, 9))
+        self.fig_2, self.ax_2 = plt.subplots(figsize=(9, 9))
+        self.fig_1, self.ax_1 = plt.subplots(figsize=(9, 9))
+
+        self.options1 = {
+            'node_color': '#afcdfa',
+            'node_size': 200,
+            'edge_color':'black',
+            'width': 2,
+            #'ax':self.ax_1,
+            'with_labels': True,
+            'font_weight':'bold',
+            }
+
+        self.options2 = {
+            'node_color': '#ffbfd7',
+            'node_size': 200,
+            'edge_color':'red',
+            'width': 1,
+            #'ax':self.ax_1,
+            'with_labels': True,
+            'font_weight':'bold',
+            }
 
     
-    nx.draw(args[0].G, args[0].vertex_list, with_labels=True, font_weight='bold',ax=ax)
-    nx.draw(args[1].G, args[1].vertex_list, with_labels=True, font_weight='bold', edge_color="r",ax=ax)
-    
-    limits=plt.axis('on') # turns on axis
-    ax.set_xlim([-1, 5])
-    ax.set_ylim([-10, 10])
-    ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-    plt.axis('equal')
-    
-    plt.show()
-    plt.pause(0.001)
-    input("Press [enter] to continue.")
-
-    return fig,ax
-
-def plot_update(g1,g2,i):
-    ax = plt.gca()
-    ax.clear()
-
-    nx.draw(g1.G, g1.vertex_list, with_labels=True, font_weight='bold', ax=ax)
-    nx.draw(g2.G, g2.vertex_list, with_labels=True, font_weight='bold', edge_color="r", ax=ax)
-
-    ax.set_title('Iteration {}'.format(i))
-    ax.set_xlim([-1, 5])
-    ax.set_ylim([-10, 10])
-    limits=plt.axis('on') # turns on axis
-    ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-    plt.axis('equal')
-
-    plt.show()
-    plt.pause(0.01)
-    #input("Press [enter] to continue.")
-
-def plot_iterations(g1, saved):
-
-    fig = plt.figure(figsize=(9, 9))
-
-    for key, value in saved.items():
-        print(key)
-        ax = fig.add_subplot(2,2,key+1)
-        ax.set_title("it. {}, Max Error = {:.2f}m ".format(key, value[1]))
-
-
-        nx.draw(g1.G, g1.vertex_list, with_labels=True, font_weight='bold', ax=ax)
-        nx.draw(value[0].G, value[0].vertex_list, with_labels=True, font_weight='bold',edge_color="r", ax=ax)
-
-        ax.set_xlim([-1, 5])
-        ax.set_ylim([-10, 10])
+    def plot_initial(self,g2):
+        plt.ion()
+        
+        nx.draw(self.g1.G, self.g1.vertex_list, ax=self.ax_1, **self.options1)
+        nx.draw(g2.G, g2.vertex_list,ax=self.ax_1, **self.options2)
+        
+        self.ax_1.set_title('Starting Conditions')
+        self.ax_1.set_xlim([-1, 5])
+        self.ax_1.set_ylim([-10, 10])
+        self.ax_1.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        
         limits=plt.axis('on') # turns on axis
-        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        plt.axis('equal')
+        
+        plt.show()
+        input("Press [enter] to continue.")
+
+
+    def plot_update(self,g2,i):
+        self.ax_1.clear()
+
+        nx.draw(self.g1.G, self.g1.vertex_list,ax=self.ax_1, **self.options1)
+        nx.draw(g2.G, g2.vertex_list,ax=self.ax_1, **self.options2)
+
+        self.ax_1.set_title('Iteration {}'.format(i))
+        self.ax_1.set_xlim([-1, 5])
+        self.ax_1.set_ylim([-10, 10])
+        self.ax_1.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        
+        limits=plt.axis('on') # turns on axis
         plt.axis('equal')
 
-    plt.show()
+        plt.show()
+        plt.pause(0.05)
 
 
-def plot_animations(g1, saved, name):
+    def plot_animations(self, saved, name):
+        def animate(i):
+            self.ax_2.clear()
 
-    fig, ax = plt.subplots(figsize=(9, 9))
+            nx.draw(self.g1.G, self.g1.vertex_list, ax = self.ax_2, **self.options1, )
+            nx.draw(saved[i][0].G, saved[i][0].vertex_list, ax = self.ax_2, **self.options2)
 
-    def animate(i):
-        ax.clear()
-        nx.draw(g1.G, g1.vertex_list, with_labels=True, font_weight='bold', ax=ax)
-        nx.draw(saved[i][0].G, saved[i][0].vertex_list, with_labels=True, font_weight='bold',edge_color="r", ax=ax)
+            self.ax_2.set_title("Iteration {}, 0.5*sum|f(x)|^2 error  = {:.5f}".format(i,saved[i][1]), fontweight="bold")
+            self.ax_2.set_xlim([-10, 20])
+            self.ax_2.set_ylim([-10, 20])
+            limits=plt.axis('on') # turns on axis
+            self.ax_2.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+            
+            plt.axis('equal')
 
-        ax.set_xlim([-10, 20])
-        ax.set_ylim([-10, 20])
-        limits=plt.axis('on') # turns on axis
+        anim = FuncAnimation(self.fig_2, animate,frames=len(saved), interval=500, repeat=True)
 
-        ax.set_title("Iteration {}, 0.5*sum|f(x)|^2 error  = {:.5f}".format(i,saved[i][1]), fontweight="bold")
+        anim.save(name, writer='imagemagick')
 
-    anim = FuncAnimation(fig, animate,frames=len(saved), interval=500, repeat=True)
 
-    anim.save(name, writer='imagemagick')
 
-if __name__ == '__main__':
-    plot_animations()
+# def plot_iterations(g1, saved):
+
+#     fig = plt.figure(figsize=(9, 9))
+
+#     for key, value in saved.items():
+#         print(key)
+#         ax = fig.add_subplot(2,2,key+1)
+#         ax.set_title("it. {}, Max Error = {:.2f}m ".format(key, value[1]))
+
+
+#         nx.draw(g1.G, g1.vertex_list, with_labels=True, font_weight='bold', ax=ax)
+#         nx.draw(value[0].G, value[0].vertex_list, with_labels=True, font_weight='bold',edge_color="r", ax=ax)
+
+#         ax.set_xlim([-1, 5])
+#         ax.set_ylim([-10, 10])
+#         limits=plt.axis('on') # turns on axis
+#         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+#         plt.axis('equal')
+
+#     plt.show()
