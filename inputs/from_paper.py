@@ -22,7 +22,7 @@ data_in = {
     "edge_lengths": [2.0, 2.0, 7/4, 2.0, 197/100, 27/10, 11/5, 29/10, 43/20],
     "rigid_edge": [0], #might need to change this
     "plotting_features": {
-        'n_color':'#afcdfa',
+        'n_color':'#ffbfd7',
         'e_color': ['#CC6677', '#6699CC', '#DFCF7F', '#0f8f06','#999999','#D2B48C','#DDA0DD','#87CEFA','#90EE90'],        
         'width': 4,
     },

@@ -12,6 +12,11 @@ data_in = {
     },
     "edge_lengths": [],
     "rigid_edge": [0],
+    "plotting_features": {
+        'n_color':'#ffbfd7',
+        'e_color': 'r',      
+        'width': 2,
+    },
     "initial_conditions":{
         0: {
             0: (0,0),

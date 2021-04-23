@@ -70,7 +70,6 @@ class Plotter():
         else:
             nx.draw(g[0].G, pos = g[0].vertex_list, ax=self.ax_1, **self.options2)
 
-
         limits=plt.axis('on') # turns on axis
         self.ax_1.set_title('Iteration {}'.format(i))
         self.ax_1.set_xlabel('x', fontsize=20)
