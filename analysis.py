@@ -6,6 +6,9 @@ import copy
 class Analysis():
 
     def __init__(self, btrack = False, max_iter=10, gradient_steps = 0):
+        
+        self.name = "name_btrack_{}_grad{}".format(btrack,gradient_steps)
+        
         self.dim = 2
 
         self.n = max_iter #iterations
@@ -20,6 +23,8 @@ class Analysis():
         self.saved_iterations = {}
         
         self.btrack = btrack
+
+        
         
         
         
@@ -36,12 +41,13 @@ class Analysis():
         
         for i in range(self.n):
 
-            print("\nIteration:", i)
+            print("\nIteration:", i+1)
 
             f_x, J = self.calc_F(g2,L,autograd=True)
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
             if i < self.n_grad_steps:
+                print("here")
                 p = f_x_red.T.dot(J_red) #Gradient step vector
                 alpha = self.backtrack(g2, L, p, self.theta, f_x)
             else:
@@ -58,7 +64,7 @@ class Analysis():
 
             err2, in_edge = self.err_member_len(g1,g2)
             
-            Plotter.plot_update(g2,i)
+            Plotter.plot_update(g2,i+1)
             self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
 
             if self.termination(err1, err1_rel, err2, in_edge) > 0:
