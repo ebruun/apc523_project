@@ -8,19 +8,12 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 class Graph():
 
-    def __init__(self, vertex_list, edge_list, rigid_edge = None, edge_lengths = False):
+    def __init__(self, vertex_list, edge_list, edge_lengths = [], rigid_edge = []):
         
         self.dim = 2
 
         self.vertex_list = vertex_list
         self.edge_list = edge_list   
-
-        if rigid_edge is None:
-            self.rigid_edge = None
-            self.ridid_node = None
-        else:
-            self.rigid_edge = rigid_edge
-            self.rigid_node = np.array([val for key,val in self.edge_list.items() if key in self.rigid_edge]).flatten()
 
         self.G = self.create_graph()
 
@@ -28,6 +21,13 @@ class Graph():
             self.lengths = {values:edge_lengths[keys] for keys,values in edge_list.items()}
         else:
             self.lengths = self.calc_edge_len()
+
+        if rigid_edge:
+            self.rigid_edge = rigid_edge
+            self.rigid_node = np.array([val for key,val in self.edge_list.items() if key in self.rigid_edge]).flatten()
+        else:
+            self.rigid_edge = None
+            self.rigid_node = None
 
     def create_graph(self):
         g = nx.Graph()

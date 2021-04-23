@@ -10,6 +10,8 @@ data_in = {
         1: (0,2),
         2: (1,2),
     },
+    "edge_lengths": [],
+    "rigid_edge": [0],
     "initial_conditions":{
         0: {
             0: (0,0),

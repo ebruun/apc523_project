@@ -31,6 +31,8 @@ data_in = {
         15: (9,7),
         16: (9,6),
     },
+    "edge_lengths": [],
+    "rigid_edge": [0],
     "initial_conditions":{
         0: {
             0: (1, 1),

@@ -47,7 +47,6 @@ class Analysis():
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
             if i < self.n_grad_steps:
-                print("here")
                 p = f_x_red.T.dot(J_red) #Gradient step vector
                 alpha = self.backtrack(g2, L, p, self.theta, f_x)
             else:
@@ -179,6 +178,14 @@ class Analysis():
                 cnt += 1
         
         return alpha
+
+
+#####################################
+    def check_formulation(self,g1,g2):
+
+        if g1.lengths[tuple(g2.rigid_node)] != round(g2.lengths[tuple(g2.rigid_node)],10):
+            print("rigid edge length not correct, check initial conditions")
+            exit()
 
 #####################################
 
