@@ -9,50 +9,42 @@ import numpy as np
 
 class Plotter():
 
-    def __init__(self, g1):
+    def __init__(self, g1, g2):
 
-        self.g1 = g1
+        self.g1 = g1 #Goal structure
+        self.g2 = g2 #Starting Guess
+        
         self.fig_1, self.ax_1 = plt.subplots(figsize=(9, 9), num='Iterations')
 
         #starting condition
         self.options1 = {
-            'node_color': '#afcdfa',
+            'node_color': [self.g1.G.nodes[u]['color'] for u in self.g1.G.nodes()],
             'node_size': 200,
-            'edge_color':'black',
-            'width': 2,
+            'edge_color':[self.g1.G[u][v]['color'] for u,v in self.g1.G.edges()],
+            'width': [self.g1.G[u][v]['width'] for u,v in self.g1.G.edges()],
             'with_labels': True,
             'font_weight':'bold',
             }
 
         #iterations
         self.options2 = {
-            'node_color': '#ffbfd7',
+            'node_color': [self.g2.G.nodes[u]['color'] for u in self.g1.G.nodes()],
             'node_size': 200,
-            'edge_color':'red',
-            'width': 1,
-            'with_labels': True,
-            'font_weight':'bold',
-            }
-
-        #rigid edge
-        self.options3 = {
-            'node_color': '#ff3636',
-            'node_size': 300,
-            'edge_color':'#ff3636',
-            'width': 5,
+            'edge_color':[self.g2.G[u][v]['color'] for u,v in self.g2.G.edges()],
+            'width': [self.g2.G[u][v]['width'] for u,v in self.g2.G.edges()],
             'with_labels': True,
             'font_weight':'bold',
             }
 
     
-    def plot_initial(self,g2):
+    def plot_initial(self,*g):
         plt.ion()
-
-        nx.draw(self.g1.G, pos = self.g1.vertex_list, ax=self.ax_1, **self.options1)
-        nx.draw(g2.G, pos = g2.vertex_list,ax=self.ax_1, **self.options2)
-
-        g2_rigid = g2.G.subgraph(g2.rigid_node)
-        nx.draw(g2_rigid, pos = g2.vertex_list,ax=self.ax_1, **self.options3)
+        
+        if len(g)>1:
+            nx.draw(g[0].G, pos = g[0].vertex_list, ax=self.ax_1, **self.options1)
+            nx.draw(g[1].G, pos = g[1].vertex_list,ax=self.ax_1, **self.options2)
+        else:
+            nx.draw(g[0].G, pos = g[0].vertex_list, ax=self.ax_1, **self.options2)
         
         limits=plt.axis('on') # turns on axis
         self.ax_1.set_title('Starting Conditions')
@@ -69,14 +61,15 @@ class Plotter():
 
 
 
-    def plot_update(self,g2,i):
+    def plot_update(self,i,*g):
         self.ax_1.clear()
 
-        nx.draw(self.g1.G, self.g1.vertex_list,ax=self.ax_1, **self.options1)
-        nx.draw(g2.G, g2.vertex_list,ax=self.ax_1, **self.options2)
+        if len(g)>1:
+            nx.draw(g[0].G, pos = g[0].vertex_list, ax=self.ax_1, **self.options1)
+            nx.draw(g[1].G, pos = g[1].vertex_list,ax=self.ax_1, **self.options2)
+        else:
+            nx.draw(g[0].G, pos = g[0].vertex_list, ax=self.ax_1, **self.options2)
 
-        g2_rigid = g2.G.subgraph(g2.rigid_node)
-        nx.draw(g2_rigid, pos = g2.vertex_list,ax=self.ax_1, **self.options3)
 
         limits=plt.axis('on') # turns on axis
         self.ax_1.set_title('Iteration {}'.format(i))
@@ -100,9 +93,6 @@ class Plotter():
             nx.draw(self.g1.G, self.g1.vertex_list, ax = self.ax_1, **self.options1, )
             nx.draw(saved[i][0].G, saved[i][0].vertex_list, ax = self.ax_1, **self.options2)
 
-            g2_rigid = saved[i][0].G.subgraph(saved[i][0].rigid_node)
-            nx.draw(g2_rigid, pos = saved[i][0].vertex_list,ax=self.ax_1, **self.options3)
-
             self.ax_1.set_title("Iteration {}, 0.5*sum|f(x)|^2 error  = {:.5f}".format(i,saved[i][1]), fontweight="bold")
             self.ax_1.set_xlabel('x', fontsize=20)
             self.ax_1.set_ylabel('y', fontsize=20)            
@@ -120,7 +110,10 @@ class Plotter():
 
 
     def error_plot(self, saved):
-        """visualizing the simple 3-noded structure error surface"""
+        """visualizing the simple 3-noded structure error surface
+        
+        This is hard-coded for the 3-noded structure, do not use for others
+        """
 
         x = np.linspace(-3, 10, 100)
         y = np.linspace(-8.5, 8.5, 100)
@@ -134,6 +127,9 @@ class Plotter():
 
         Z = f(X, Y)
 
+        ######################################
+        # 1st Plot: 3D surface
+        ######################################
 
         fig1, ax1 = plt.subplots(figsize=(9, 9),subplot_kw={"projection": "3d"}, num = "Error")
 
@@ -151,7 +147,9 @@ class Plotter():
         fig1.colorbar(surf, shrink=0.5, aspect=5)
 
 
-        ###################
+        ######################################
+        # 2nd Plot: 2D contours
+        ######################################
         fig2, ax2 = plt.subplots(figsize=(9, 9), num = "2D Error")
 
         #levels = np.linspace(-1000,6500,40)

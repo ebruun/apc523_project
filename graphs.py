@@ -8,35 +8,48 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 class Graph():
 
-    def __init__(self, vertex_list, edge_list, edge_lengths = [], rigid_edge = []):
+    def __init__(self, vertex_list, edge_list, **vars):
         
         self.dim = 2
 
         self.vertex_list = vertex_list
         self.edge_list = edge_list   
 
-        self.G = self.create_graph()
-
-        if edge_lengths:
-            self.lengths = {values:edge_lengths[keys] for keys,values in edge_list.items()}
+        if vars["edge_lengths"]:
+            self.lengths = {values:vars["edge_lengths"][keys] for keys,values in edge_list.items()}
         else:
             self.lengths = self.calc_edge_len()
 
-        if rigid_edge:
-            self.rigid_edge = rigid_edge
+        if vars["rigid_edge"]:
+            self.rigid_edge = vars["rigid_edge"]
             self.rigid_node = np.array([val for key,val in self.edge_list.items() if key in self.rigid_edge]).flatten()
         else:
             self.rigid_edge = None
             self.rigid_node = None
 
-    def create_graph(self):
+        self.G = self.create_graph(vars["features"])
+
+    def create_graph(self, f):
         g = nx.Graph()
 
-        g.add_nodes_from(self.vertex_list.keys())
-        g.add_edges_from(self.edge_list.values())
+        g.add_nodes_from(self.vertex_list.keys(), color = f['n_color'])
+        g.add_edges_from(self.edge_list.values(), color = f['e_color'][0], width = f['width'])
+
+        u = [u for u,v in g.edges()]
+        v = [v for u,v in g.edges()]
+        for i,c in enumerate(f['e_color']):
+            g[u[i]][v[i]]['color'] = c
 
         for n, p in self.vertex_list.items():
             g.nodes[n]['pos'] = p
+
+        #make rigid edge plot thicker (assume only one such edge)
+        if self.rigid_edge:
+            g[self.rigid_node[0]][self.rigid_node[1]]['width'] = 5
+            g.nodes[self.rigid_node[0]]['color'] ='r'
+            g.nodes[self.rigid_node[1]]['color'] ='r'
+
+
 
         return g
 
@@ -93,7 +106,9 @@ def generate_graph(n = 10, fac = 1):
 
     return points, edges
 
-def generate_graph_guess(n, vertex_list, fac = 1):
+def generate_graph_guess(vertex_list, fac = 1):
+
+    n = len(vertex_list)
 
     points = {
         0: vertex_list[0],

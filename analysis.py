@@ -4,7 +4,6 @@ from autograd import value_and_grad
 import copy
 
 class Analysis():
-
     def __init__(self, btrack = False, max_iter=10, gradient_steps = 0):
         
         self.name = "name_btrack_{}_grad{}".format(btrack,gradient_steps)
@@ -25,27 +24,37 @@ class Analysis():
         self.btrack = btrack
 
         
-        
-        
-        
     def iterator(self,g1,g2, Plotter):
+        """Function performing iterative nonlinear root finding solution
+        
+        Calculates either Newton-Raphson or Gradient Descent step
 
+        """
+        
+        ################################
+        # 1. Starting conditions
+        ################################
         L = self.lengths_to_array(g1,g2) #target lengths
 
         f_x, _ = self.calc_F(g2,L,autograd=False)
         err1 = self.err_cumulative(f_x)
 
-        #starting
+        # Record/save starting conditions
         self.saved_iterations[0] = (copy.deepcopy(g2), err1)
         self.theta = np.array([val for key,val in g2.vertex_list.items() if key not in g2.rigid_node]).flatten()
         
-        for i in range(self.n):
 
+        ################################
+        # 2. Solution Loop
+        ################################
+        for i in range(self.n):
             print("\nIteration:", i+1)
 
+            # A) initialize
             f_x, J = self.calc_F(g2,L,autograd=True)
             J_red,f_x_red = self.reduce_jacobian(J,f_x,g2)
 
+            # B) choose what type of step to compute
             if i < self.n_grad_steps:
                 p = f_x_red.T.dot(J_red) #Gradient step vector
                 alpha = self.backtrack(g2, L, p, self.theta, f_x)
@@ -53,26 +62,33 @@ class Analysis():
                 p = np.linalg.inv(J_red).dot(f_x_red) #Newton step vector
                 alpha = self.backtrack(g2, L, p, self.theta, f_x)
             
+            # C) update previous step with new step, scaled by backtracking
             self.theta -= alpha*p
 
+            # D) update vertex locations for next iteration
             g2.vertex_list = self.update_vertex_list(g2, self.theta)
+
+            # E) error calculations with updated vertex locations
             f_x, _ = self.calc_F(g2,L,autograd=False)
 
             err1 = self.err_cumulative(f_x)
             err1_rel = self.err_relative(err1)
-
             err2, in_edge = self.err_member_len(g1,g2)
-            
-            Plotter.plot_update(g2,i+1)
+
+            # F) update plot and save iteration for animation
+            Plotter.plot_update(i+1,g2)
             self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
 
+            # G) check convergence criteria
             if self.termination(err1, err1_rel, err2, in_edge) > 0:
                 break
 
             #input("Press [enter] for next iteration.")
 
-                 
 
+    #####################################
+    # Computation Functions
+    #####################################          
     def calc_F(self,g,L,autograd = False):
         """calculate the value of the function, and the gradient if needed"""
         C = self.coords_to_array(g) #coordinates of edges (as a 2x2 matrix)
@@ -96,54 +112,8 @@ class Analysis():
         x_start, y_start, x_end, y_end = x
         return (x_start - x_end)**2 + (y_start - y_end)**2 - L**2
 
-    def coords_to_array(self,g2):
-        a = [[g2.vertex_list[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
-        return np.array(a)
-
-    def lengths_to_array(self,g1,g2):
-        a = [g1.lengths[tuple(edge)] for _,edge in g2.edge_list.items()]      
-        return np.array(a)  
-
-
-
-    def map_dof(self,edge):
-        return [edge[0]*self.dim, edge[0]*self.dim + 1, edge[1]*self.dim, edge[1]*self.dim + 1]
-
-
-    def reduce_jacobian(self,J,f_x,g2):
-        J_red = np.delete(J,g2.rigid_edge,axis=0) #column reduce
-
-        col_red = []
-        for node in g2.rigid_node:
-            col_red.append([self.dim*node,self.dim*node+1])
-
-        J_red = np.delete(J_red,col_red,axis=1) #row reduce
-
-        f_x_red = np.delete(f_x, g2.rigid_edge)
-        return J_red, f_x_red
-
-
-    def update_vertex_list(self,g,x):
-        """ take a reduced nodal position vector x and map to position dictionary
-        
-        x is in the form: [x0, y0, x1, y1,....xn, yn]
-        
-        """
-        count = 0
-        pos_temp = g.vertex_list
-
-        for node,coord in g.vertex_list.items():
-            if node not in g.rigid_node:
-                pos_temp[node] = (x[count*self.dim], x[count*self.dim + 1])
-                count += 1
-
-        return pos_temp
-    
-
-
     def backtrack(self,g2, L, p, theta, f_x_start):
         """reduce the newton step until error is less than previous"""
-
         err1 = self.err_cumulative(f_x_start)
         err2 = err1
 
@@ -180,19 +150,64 @@ class Analysis():
         return alpha
 
 
-#####################################
-    def check_formulation(self,g1,g2):
+    #####################################
+    # Helper Functions
+    #####################################
+    def coords_to_array(self,g2):
+        a = [[g2.vertex_list[vertex] for vertex in edge] for _,edge in g2.edge_list.items()]
+        return np.array(a)
 
+    def lengths_to_array(self,g1,g2):
+        a = [g1.lengths[tuple(edge)] for _,edge in g2.edge_list.items()]      
+        return np.array(a)  
+
+    def map_dof(self,edge):
+        return [edge[0]*self.dim, edge[0]*self.dim + 1, edge[1]*self.dim, edge[1]*self.dim + 1]
+
+    def reduce_jacobian(self,J,f_x,g2):
+        J_red = np.delete(J,g2.rigid_edge,axis=0) #column reduce
+
+        col_red = []
+        for node in g2.rigid_node:
+            col_red.append([self.dim*node,self.dim*node+1])
+
+        J_red = np.delete(J_red,col_red,axis=1) #row reduce
+
+        f_x_red = np.delete(f_x, g2.rigid_edge)
+        return J_red, f_x_red
+
+    def update_vertex_list(self,g,x):
+        """ take a reduced nodal position vector x and map to position dictionary
+        
+        x is in the form: [x0, y0, x1, y1,....xn, yn]
+        
+        """
+        count = 0
+        pos_temp = g.vertex_list
+
+        for node,coord in g.vertex_list.items():
+            if node not in g.rigid_node:
+                pos_temp[node] = (x[count*self.dim], x[count*self.dim + 1])
+                count += 1
+
+        return pos_temp
+    
+
+    #####################################
+    # Check Functions
+    #####################################
+    def check_formulation(self,g1,g2):
         if g1.lengths[tuple(g2.rigid_node)] != round(g2.lengths[tuple(g2.rigid_node)],10):
             print("rigid edge length not correct, check initial conditions")
             exit()
 
-#####################################
 
+    #####################################
+    # Error Functions
+    #####################################
     def err_cumulative(self, f_x):
         """cumulative squared error for a vector"""
         return 0.5*f_x.T.dot(f_x)
-
 
     def err_relative(self, e):
         """check the different between iterations, set variable for next iteration"""
@@ -200,10 +215,8 @@ class Analysis():
         self.err_save = e
         return abs(diff)
 
-
     def err_member_len(self,g1,g2):
         """find maximum absolute length error"""
-
         g2.lengths = g2.calc_edge_len()
 
         max_abs_error = 0
@@ -220,9 +233,7 @@ class Analysis():
         
         return max_abs_error, max_abs_error_edge
 
-
     def termination(self, err1, err1_rel, err2, in_edge):
-
         if err1 < self.max_abs_err and err1_rel < self.max_rel_error:
             print("CONVERGED AT ROOT")
             print("0.5*sum|f(x)|^2 = {:.3e}".format(err1))
