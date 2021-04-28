@@ -24,11 +24,11 @@ def setup():
     restrained_dof = [1, 2, 3, 4]
     forces = {1: [0.0, 0.0], 2: [0.0, 0.0], 3: [0.0, -200.0]}
 
-    # material properties: Steel
-    stiffnesses = {1: 30.0e6, 2: 30.0e6}
+    # material properties [force/area]
+    stiffnesses = {1: 20.5e3, 2: 20.5e3} # Steel [kN/cm2]
 
-    # geometric properties
-    areas = {1: 1.0, 2: 2.0}
+    # cross-section properties [area]
+    areas = {1: 100.0, 2: 500.0} # [cm2]
 
     ndof = 2 * len(nodes)
 
@@ -57,20 +57,28 @@ def points(element, properties):
     elements = properties['elements']
     nodes = properties['nodes']
     dof = properties['dof']
+    print("elements:", elements)
+    print("nodes:", nodes)
+    print("dof global:", dof)
 
     # find nodes that elements connects
     start_node = elements[element][0]
     end_node = elements[element][1]
+    print("start_node:", start_node)
+    print("end_node:", end_node)
 
     # coordinates for each node
     start_pt = np.array(nodes[start_node])
     end_pt = np.array(nodes[end_node])
+    print("start_pt:", start_pt)
+    print("end_pt:", end_pt)
 
     # degrees of freedom for each node
     dof_nodes = dof[start_node] # get the first 2 dof from start node
     dof_nodes.extend(dof[end_node]) # add 2 dof from end node and flatten list
     dof_nodes = np.array(dof_nodes)
-
+    print("dof_nodes:", dof_nodes)
+    print()
     return start_pt, end_pt, dof_nodes
 
 def draw_element(start_pt, end_pt, element, areas):
@@ -93,7 +101,7 @@ def rotation_matrix(element_vec, x_axis, y_axis):
     x_proj = direction_cosine(element_vec, x_axis)
     y_proj = direction_cosine(element_vec, y_axis)
 
-    return np.array([[x_proj, y_proj, 0, 0],[0, 0, x_proj, y_proj]])
+    return np.array([[x_proj, y_proj, 0, 0], [0, 0, x_proj, y_proj]])
 
 def get_matrices(properties):
     """
@@ -124,21 +132,25 @@ def get_matrices(properties):
 
         c_k = E[element] * area / length
 
+        # local k for a truss element
         k_element = np.array([[1, -1], [-1, 1]])
 
         # element rotation matrix
         q_element = rotation_matrix(element_vec, x_axis, y_axis)
         # apply rotation
         k_q = q_element.T.dot(k_element).dot(q_element)
+        print("\nk_q\n:", k_q)
 
-        # change from element to global coord.
+        # connectivity matrix determines where k_element is added in the global
+        # K matrix
         index = dof - 1
-        Q = np.zeros((4, ndof))
+        connect = np.zeros((4, ndof)) # 4 is the number of dof for a truss element
         for i in range(4):
-            Q[i, index[i]] = 1.0
-
-        K_q = Q.T.dot(k_q).dot(Q)
+            connect[i, index[i]] = 1.0
+        print("\nQ\n:", connect)
+        K_q = connect.T.dot(k_q).dot(connect)
         K += c_k * K_q
+        print("\nK\n:", K)
 
     # force vector R
     R = []
