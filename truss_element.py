@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #     def __init__(self):
 #         self.stiffness =
 
-def setup():
+def setup(G):
     """
     Setup geometry, material, boundary conditions, loads, cross-section.
     """
@@ -18,17 +18,23 @@ def setup():
     y_axis = np.array([0.0, 1.0])
 
     # define model
-    nodes = {1: [0.0, 10.0], 2: [0.0, 0.0], 3: [10.0, 5.0]}
-    dof = {1: [1, 2], 2: [3, 4], 3: [5, 6]}
-    elements = {1: [1, 3], 2: [2, 3]}
-    restrained_dof = [1, 2, 3, 4]
-    forces = {1: [0.0, 0.0], 2: [0.0, 0.0], 3: [0.0, -200.0]}
+    nodes = G.vertex_list
+
+    list_dof = [[2*i + j for j in range(1,3)] for i in range(len(nodes))]
+    list_nodes = list(nodes.keys())
+    dof = dict(zip(list_nodes, list_dof))
+
+    elements = G.edge_list
+
+    restrained_dof = [1, 2, 3, 4] # arbitrary selection of supports
+    forces = dict(zip(nodes, [[0]* 2]*len(nodes)))
+    forces[9] = [0, -200.0] # arbitrary placement of forces
 
     # material properties [force/area]
-    stiffnesses = {1: 20.5e3, 2: 20.5e3} # Steel [kN/cm2]
+    stiffnesses = dict(zip(elements, [20.5e3]*len(elements))) # Steel [kN/cm2]
 
     # cross-section properties [area]
-    areas = {1: 100.0, 2: 500.0} # [cm2]
+    areas = dict(zip(elements, [100]*len(elements))) # [cm2]
 
     ndof = 2 * len(nodes)
 
@@ -57,28 +63,21 @@ def points(element, properties):
     elements = properties['elements']
     nodes = properties['nodes']
     dof = properties['dof']
-    print("elements:", elements)
-    print("nodes:", nodes)
-    print("dof global:", dof)
 
     # find nodes that elements connects
     start_node = elements[element][0]
     end_node = elements[element][1]
-    print("start_node:", start_node)
-    print("end_node:", end_node)
 
     # coordinates for each node
     start_pt = np.array(nodes[start_node])
     end_pt = np.array(nodes[end_node])
-    print("start_pt:", start_pt)
-    print("end_pt:", end_pt)
 
     # degrees of freedom for each node
-    dof_nodes = dof[start_node] # get the first 2 dof from start node
+    dof_ns = dof[start_node] # get the first 2 dof from start node
+    dof_nodes = list(dof_ns)
     dof_nodes.extend(dof[end_node]) # add 2 dof from end node and flatten list
     dof_nodes = np.array(dof_nodes)
-    print("dof_nodes:", dof_nodes)
-    print()
+
     return start_pt, end_pt, dof_nodes
 
 def draw_element(start_pt, end_pt, element, areas):
@@ -86,7 +85,7 @@ def draw_element(start_pt, end_pt, element, areas):
     Draw an element with linewidth proportional to it's cross-section area.
     """
     plt.plot([start_pt[0], end_pt[0]], [start_pt[1], end_pt[1]], color='k',
-            linestyle='-', linewidth=7*areas[element], zorder=1)
+            linestyle='-', linewidth=0.02*areas[element], zorder=1) #arbitraty scale
 
 def direction_cosine(vec1, vec2):
     """
@@ -139,7 +138,6 @@ def get_matrices(properties):
         q_element = rotation_matrix(element_vec, x_axis, y_axis)
         # apply rotation
         k_q = q_element.T.dot(k_element).dot(q_element)
-        print("\nk_q\n:", k_q)
 
         # connectivity matrix determines where k_element is added in the global
         # K matrix
@@ -147,10 +145,8 @@ def get_matrices(properties):
         connect = np.zeros((4, ndof)) # 4 is the number of dof for a truss element
         for i in range(4):
             connect[i, index[i]] = 1.0
-        print("\nQ\n:", connect)
         K_q = connect.T.dot(k_q).dot(connect)
         K += c_k * K_q
-        print("\nK\n:", K)
 
     # force vector R
     R = []
