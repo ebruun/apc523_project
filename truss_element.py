@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 #     """
 #     A 2D truss element with cross-section and material properties.
 #     """
-#     def __init__(self):
+#     def __init__(self, G):
 #         self.stiffness =
 
-def setup(G):
+def setup(G, force_x, force_y, elasticity, area):
     """
     Setup geometry, material, boundary conditions, loads, cross-section.
     """
@@ -26,15 +26,15 @@ def setup(G):
 
     elements = G.edge_list
 
-    restrained_dof = [1, 2, 3, 4] # arbitrary selection of supports
+    restrained_dof = [1, 2, 3, 4] # supports at the first 2 nodes
     forces = dict(zip(nodes, [[0]* 2]*len(nodes)))
-    forces[9] = [0, -200.0] # arbitrary placement of forces
+    forces[list_nodes[-1]] = [force_x, force_y] # force y direction at the last node
 
     # material properties [force/area]
-    stiffnesses = dict(zip(elements, [20.5e3]*len(elements))) # Steel [kN/cm2]
+    stiffnesses = dict(zip(elements, [elasticity]*len(elements))) # Steel [kN/cm2]
 
     # cross-section properties [area]
-    areas = dict(zip(elements, [100]*len(elements))) # [cm2]
+    areas = dict(zip(elements, [area]*len(elements))) # [cm2]
 
     ndof = 2 * len(nodes)
 
@@ -85,7 +85,7 @@ def draw_element(start_pt, end_pt, element, areas):
     Draw an element with linewidth proportional to it's cross-section area.
     """
     plt.plot([start_pt[0], end_pt[0]], [start_pt[1], end_pt[1]], color='k',
-            linestyle='-', linewidth=0.02*areas[element], zorder=1) #arbitraty scale
+            linestyle='-', zorder=1) #arbitraty scale
 
 def direction_cosine(vec1, vec2):
     """
@@ -190,11 +190,13 @@ def get_stresses(properties, u):
 
     return stresses
 
-def show_results(u, stresses):
+def show_results(u, stresses, area):
     """
+    Prints the nodal displacements, stresses and maximum displacement magnitude.
     """
-    print("Nodal Displacments:", u)
-    print("Stresses:", stresses)
+    print("Nodal Displacements:", np.round(u, 5))
+    print("Stresses:", np.round(stresses, 2))
+    force = np.round(stresses, 2) * area
+    print("Normal Forces:", np.round(force, 2))
     print("Displacment Magnitude:", round(norm(u), 5))
     print("\n")
-

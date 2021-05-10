@@ -19,31 +19,39 @@ import random
 from graphs import Graph
 from graph_plot import plot, plot_iterations, plot_animations
 
-from inputs.input_structure import p1, e1, p2, e2 #pre-defined structures
+from inputs.input_structure import p3, e3, p_validate, e_validate #pre-defined structures
 
 
 ##########################################################
-# 1. Create target structure
+# 1. Create target structure and properties.
 ##########################################################
 gen_size = 6
 
-vertices = p1
-edges = e1
+vertices = p_validate
+edges = e_validate
 
+# meters
 G1 = Graph(vertex_list = vertices, edge_list = edges)
 
+force_x = 0 # kN
+force_y = -1000 # kN
+elasticity = 205e6 # kN/m2
+area = 0.1 * 0.1 # m2
 
+##########################################################
+# 2. Run finite element analysis of a 2d truss structure.
+##########################################################
 
 def main():
     """
     Main script for Finite Element analysis of a 2D truss structure.
     """
     # problem setup
-    properties = setup(G1)
+    properties = setup(G1, force_x, force_y, elasticity, area)
 
     # determine global matrices
     K, R = get_matrices(properties)
-    print('got matrices')
+
     # calculate static displacements of each element K*u = R
     # with numpy function
     u = inv(K).dot(R)
@@ -61,7 +69,7 @@ def main():
     stresses = get_stresses(properties, u)
 
     # output results
-    show_results(u, stresses)
+    show_results(u, stresses, area)
 
     plt.title('Analysis of Truss Structure')
     plt.show()
