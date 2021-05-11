@@ -108,6 +108,35 @@ class Plotter():
         anim.save(name, writer='imagemagick')
 
 
+    def plot_degree_distribution(self):
+        """plot the nodal degree distribution for the graph
+        """
+        plt.ioff()
+        fig1, ax1 = plt.subplots(figsize=(9, 9), num = "Degree_rank")
+
+        degree_sequence = sorted([d for n, d in self.g1.G.degree()], reverse=True)
+        dmax = max(degree_sequence)
+
+        plt.gcf()
+
+        plt.plot(degree_sequence, "b-", marker="o")
+        plt.title("Degree rank plot")
+        plt.ylabel("degree")
+        plt.xlabel("rank")
+
+        ax1.set_yticks(np.arange(1, dmax+1))
+        #ax1.set_xticks(np.arange(0, self.g1.G.number_of_nodes()))
+
+        # draw graph in inset
+        # plt.axes([0.45, 0.45, 0.45, 0.45])
+        # Gcc = self.g1.G.subgraph(sorted(nx.connected_components(self.g1.G), key=len, reverse=True)[0])
+        # pos = self.g1.vertex_list
+        # plt.axis("off")
+        # nx.draw_networkx_nodes(Gcc, pos, node_size=20)
+        # nx.draw_networkx_edges(Gcc, pos, alpha=0.4)
+        plt.show()
+
+
     def error_plot(self, saved):
         """visualizing the simple 3-noded structure error surface
         
@@ -177,3 +206,41 @@ class Plotter():
         fig2.colorbar(surf2)
 
         plt.show()
+
+    def plot_convergce():
+        """hard-coded convergence plots
+        """
+        #
+        # NR no backtrack
+        x1 = np.arange(0,8) 
+        y1 = [2.654e3, 5.731e5, 3.16e4, 1.214e3,1.310e1,3.871e-03,3.891e-10,3.944e-24]
+
+        # NR + peterson
+        x2 = np.arange(0,6) 
+        y2 = [2.654e3,3.401e2, 5.011e1, 4.991e-2, 6.426e-8, 1.075e-19]    
+
+        # NR + armijo
+        x3 = np.arange(0,6) 
+        y3 = [2.654e3,3.401e2, 5.011e1, 4.991e-2, 6.426e-8, 1.075e-19]   
+
+        # GD + peterson 
+        x4 = np.arange(0,11)
+        y4 = [2.654e3, 1.263e3, 8.537e2, 7.475e2, 5.740e1, 7.047, 3.404, 1.332, 6.123e-1, 2.639e-1, 1.229e-1]
+
+        fig_1, ax_1 = plt.subplots(figsize=(9, 9), num='convergence')
+        
+
+        ax_1.plot(x1,y1,color="blue", zorder=1)
+        ax_1.plot(x2,y2,color="green", zorder=1)
+        ax_1.plot(x4,y4,color="red", zorder=1)
+        ax_1.set_xlabel('Iteration', fontsize=16)
+        ax_1.set_ylabel('Error', fontsize=16)
+        ax_1.xaxis.set_ticks(np.arange(0, 11))
+
+        plt.legend(['Newton-Raphson','Newton-Raphson + Backtrack', 'Gradient Descent'])
+
+
+        ax_1.set_yscale('log')
+        plt.show()
+
+
