@@ -86,6 +86,7 @@ class Plotter():
 
 
     def plot_animations(self, saved, name):
+        print("\nmaking animation, please wait...")
         def animate(i):
             self.ax_1.clear()
 
@@ -106,6 +107,7 @@ class Plotter():
         anim = FuncAnimation(self.fig_1, animate,frames=len(saved), interval=500, repeat=True)
 
         anim.save(name, writer='imagemagick')
+        print("\nanimation saved!")
 
 
     def plot_degree_distribution(self):

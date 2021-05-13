@@ -1,5 +1,9 @@
 data_in = {
     "name": "FromPaper",
+    "output_vid": "outputs/PaperValidationStructure.gif",
+    "backtrack": "peterson",
+    "n_max_steps": 50,
+    "n_gradient_steps": 0,
     "vertices": {
         0: (1, 1),
         1: (1, 3),
@@ -21,11 +25,18 @@ data_in = {
     },
     "edge_lengths": [2.0, 2.0, 7/4, 2.0, 197/100, 27/10, 11/5, 29/10, 43/20],
     "rigid_edge": [0], #might need to change this
-    "plotting_features": {
+    #
+    "plotting_features1": {
+        'n_color':'#afcdfa',
+        'e_color': ['k'],      
+        'width': 2
+    },
+    "plotting_features2": {
         'n_color':'#ffbfd7',
         'e_color': ['#CC6677', '#6699CC', '#DFCF7F', '#0f8f06','#999999','#D2B48C','#DDA0DD','#87CEFA','#90EE90'],        
         'width': 4,
     },
+    #
     "initial_conditions":{
         0: {
             0: (1, 1),

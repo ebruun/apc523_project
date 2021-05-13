@@ -13,9 +13,9 @@ class Analysis():
         self.n = max_iter #iterations
         self.n_grad_steps = gradient_steps #hoe many gradient steps to perform
 
-        self.max_memb_err = 1e-6
-        self.max_abs_err = 1e-6
-        self.max_rel_error = 1e-6
+        self.max_memb_err = 1e-10
+        self.max_abs_err = 1e-10
+        self.max_rel_error = 1e-10
 
         self.err_save = 0
 
@@ -76,7 +76,7 @@ class Analysis():
             err2, in_edge = self.err_member_len(g1,g2)
 
             # F) update plot and save iteration for animation
-            Plotter.plot_update(i+1,g2)
+            Plotter.plot_update(i+1,g1,g2)
             self.saved_iterations[i+1] = (copy.deepcopy(g2), err1)
 
             # G) check convergence criteria

@@ -1,5 +1,10 @@
 data_in = {
-    "name": "MediumSized",
+    "name": "MediumStructure",
+    "output_vid": "outputs/MediumStructure.gif",
+    "backtrack": False,
+    "n_max_steps": 50,
+    "n_gradient_steps": 0,
+    #
     "vertices": {
         0: (1, 1),
         1: (4, 1),
@@ -33,11 +38,18 @@ data_in = {
     },
     "edge_lengths": [],
     "rigid_edge": [0],
-    "plotting_features": {
+    #
+    "plotting_features1": {
+        'n_color':'#afcdfa',
+        'e_color': ['k'],      
+        'width': 2
+    },
+    "plotting_features2": {
         'n_color':'#ffbfd7',
         'e_color': 'r',      
         'width': 2,
     },
+    #
     "initial_conditions":{
         0: {
             0: (1, 1),
