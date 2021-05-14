@@ -1,8 +1,8 @@
 data_in = {
     "name": "MediumStructure",
     "output_vid": "outputs/MediumStructure.gif",
-    "backtrack": False,
-    "n_max_steps": 50,
+    "backtrack": "peterson",
+    "n_max_steps": 1000,
     "n_gradient_steps": 0,
     #
     "vertices": {

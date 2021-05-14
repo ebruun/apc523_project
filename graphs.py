@@ -1,5 +1,6 @@
 #PYTHON IMPORTS
 import networkx as nx
+from networkx.linalg.graphmatrix import incidence_matrix
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -94,15 +95,35 @@ def generate_graph(n = 10, fac = 1):
         2: (1,2),
         }
 
+    # mat = np.zeros([n,n])
+
+    # mat[0,1] = 1
+    # mat[1,0] = 1
+
+    # mat[0,2] = 1
+    # mat[2,0] = 1
+
+    # mat[1,2] = 1
+    # mat[2,1] = 1    
+
     for i in range(3,n):
         new_pnt = (round(random.random()*fac,1),round(random.random()*fac,1))
         points[i] = new_pnt
 
-        l = [*range(0,i)]
-        new_edges = random.sample(l,2)
+        #l = [idx for idx,x in enumerate(sum(mat) < 4) if x]
+        # l2 = [x for x in l if x < i]
+
+        l2 = [*range(0,i)]
+        new_edges = random.sample(l2,2)
 
         edges[len(edges)] = (i,new_edges[0])
         edges[len(edges)] = (i,new_edges[1])
+
+        # mat[i,new_edges[0]] = 1
+        # mat[new_edges[0],i] = 1
+
+        # mat[i,new_edges[1]] = 1
+        # mat[new_edges[1],i] = 1
 
     return points, edges
 

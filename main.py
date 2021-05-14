@@ -11,17 +11,19 @@ from analysis import Analysis
 from graph_plot import Plotter
 
 #ANALYSIS STRUCTURE (TURN ONE ON)
-from inputs.simple import data_in
-#from inputs.medium_size import data_in
+#from inputs.simple import data_in
+from inputs.medium_size import data_in
 #from inputs.from_paper import data_in
 
 ##########################################################
 # 1. Create target structure
 ##########################################################
 
-# Turn on if want to generate a random structure
+###
+# Turn on toggle if want to generate a random structure
+###
 random.seed(20)
-random_gen = False
+random_gen = True
 
 if random_gen:
     # Random Initial Structure
@@ -48,10 +50,9 @@ G1 = Graph(
 ##########################################################
 # 2. Set initial conditions
 ##########################################################
-
 if random_gen:
     # Random Initial Guess
-    vertices_guess = generate_graph_guess(vertex_list = vertices, fac = 5)
+    vertices_guess = generate_graph_guess(vertex_list = vertices, fac = 15)
     rigid_edge = [0]
     plotting_features = {'n_color':'#ffbfd7','e_color': 'r','width': 2}
 else:
@@ -68,7 +69,6 @@ G2 = Graph(
     features = plotting_features
     )
 
-
 P = Plotter(G1, G2)
 P.plot_initial(G1,G2) #Just G2 if not want to show target graph
 
@@ -78,12 +78,11 @@ input("\nPress [enter] to start analysis.")
 ##########################################################
 # 3. Perform Multi-Dimensional Nonlinear Root Finding
 ##########################################################
-
 if random_gen:
     # Random Initial Guess
     btrack = "peterson"
-    n_max_steps = 30
-    n_gradient_steps = 0
+    n_max_steps = 300
+    n_gradient_steps = 290
 else:
     # Specified Initial Guess
     btrack = data_in["backtrack"]
@@ -113,7 +112,7 @@ else:
     output_vid = data_in["output_vid"]
     
 P.plot_degree_distribution()    
-P.plot_animations(A.saved_iterations,output_vid) #to make GIF
+#P.plot_animations(A.saved_iterations,output_vid) #to make GIF
 
 input("\nPress [enter] to finish.")
 plt.close("all")
