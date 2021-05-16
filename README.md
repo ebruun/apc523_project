@@ -27,6 +27,8 @@ Package requirements: make sure to have installed Autograd, Networkx, Numpy, and
 ### Part 1: Graphs
 To run an iteration on a medium size graph, just run `python main.py`, the iterations will be shown in a new matplotlib window. To change the options, see instructions in that same file.
 
+Turn output plots on and off as needed, note that GIFs take a long time to create for analyses over 20 iterations. There are several example output GIFs found in the output folder, new outpit will be saved here. There are three predefined input files that can be run, turn these on/off in the package definition portion of the main.py file. 
+
 ### Part 2: FEM
 
 To run the script with a simple truss with three nodes and two elements, run `python fem_analysis.py`.
