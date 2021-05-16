@@ -18,7 +18,11 @@ The project is divided into two main parts: (1) graph realizations and nonlinear
 
 ## Getting Started
 
-Package requirements: make sure to have installed Atugograd, Networkx, Numpy, and SciPy.
+create a conda environment to run the program using:
+
+`conda env create -f environment.yml`
+
+Package requirements: make sure to have installed Autograd, Networkx, Numpy, and SciPy.
 
 ### Part 1: Graphs
 To run an iteration on a medium size graph, just run `python main.py`, the iterations will be shown in a new matplotlib window. To change the options, see instructions in that same file.
