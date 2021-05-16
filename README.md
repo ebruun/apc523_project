@@ -20,11 +20,11 @@ The project is divided into two main parts: (1) graph realizations and nonlinear
 
 create a conda environment to run the program using:
 
-`conda create --name apc523graphs --file requirements.txt`
+`conda env create -f environment.yml`
 
 Select [y] to proceed. Then, activate the environment using:
 
-`conda activate apc523graphs`
+`conda activate APC523`
 
 Package requirements: make sure to have installed Autograd, Networkx, Numpy, and SciPy.
 
