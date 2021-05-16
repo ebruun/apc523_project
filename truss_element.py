@@ -2,12 +2,6 @@ import numpy as np
 from numpy.linalg import norm
 import matplotlib.pyplot as plt
 
-# class Truss2d():
-#     """
-#     A 2D truss element with cross-section and material properties.
-#     """
-#     def __init__(self, G):
-#         self.stiffness =
 
 def setup(G, force_x, force_y, elasticity, area):
     """
@@ -104,6 +98,7 @@ def rotation_matrix(element_vec, x_axis, y_axis):
 
 def get_matrices(properties):
     """
+    Construct the stiffness matrix and vector of forces.
     """
     # construct the global stiffness matrix
     ndof = properties['ndof']
@@ -165,7 +160,7 @@ def get_matrices(properties):
 
 def get_stresses(properties, u):
     """
-    Stress in each element.
+    Get the stress in each element.
     """
     x_axis = properties['x_axis']
     y_axis = properties['y_axis']
@@ -192,7 +187,7 @@ def get_stresses(properties, u):
 
 def show_results(u, stresses, area):
     """
-    Prints the nodal displacements, stresses and maximum displacement magnitude.
+    Prints the nodal displacements, stresses, normal forces and maximum displacement.
     """
     print("Nodal Displacements:", np.round(u, 5))
     print("Stresses:", np.round(stresses, 2))
