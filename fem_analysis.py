@@ -14,7 +14,7 @@ import random
 #LOCAL IMPORTS
 from graphs import Graph, generate_graph
 
-from inputs.input_structure import p3, e3, p_validate, e_validate #pre-defined structures
+from inputs.fem_input_structure import p3, e3, p_validate, e_validate #pre-defined structures
 
 ##########################################################
 # 1. Create target structure and properties.
