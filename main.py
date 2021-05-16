@@ -30,11 +30,11 @@ edges = e1
 
 G1 = Graph(vertex_list = vertices, edge_list = edges)
 
-
 ##########################################################
 # 2. Set initial conditions
 ##########################################################
-vertices_guess = ic1_2
+
+vertices_guess = ic1_1
 #vertices_guess = generate_graph_guess(n = gen_size, vertex_list = vertices, fac = 5)
 
 G2 = Graph(vertex_list = vertices_guess, edge_list = edges, rigid_edge = [0])
