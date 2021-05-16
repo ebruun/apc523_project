@@ -21,9 +21,10 @@ The project is divided into two main parts: (1) graph realizations and nonlinear
 Package requirements: make sure to have installed Atugograd, Networkx, Numpy, and SciPy.
 
 ### Part 1: Graphs
+To run an iteration on a medium size graph, just run `python main.py`, the iterations will be shown in a new matplotlib window. To change the options, see instructions in that same file.
 
 ### Part 2: FEM
 
 To run the script with a simple truss with three nodes and two elements, run `python fem_analysis.py`.
 
-To change the settings, such as the material properties or the graph example, follow instructions in the comments of te scrip example in  `fem_analysis.py`.
+To change the settings, such as the material properties or the graph example, follow instructions in the comments of te scrip example in  `fem_analysis.py`. Two other input graphs are available through switching Options 1, 2, and 3 in that same file.
