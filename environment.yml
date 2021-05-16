@@ -1,4 +1,4 @@
-name: APC523_graphs
+name: APC523
 channels:
   - conda-forge
   - r
