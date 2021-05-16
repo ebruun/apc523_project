@@ -46,7 +46,6 @@ G1 = Graph(
     features = plotting_features
     )
 
-
 ##########################################################
 # 2. Set initial conditions
 ##########################################################
@@ -116,7 +115,3 @@ P.plot_degree_distribution()
 
 input("\nPress [enter] to finish.")
 plt.close("all")
-
-
-
-
