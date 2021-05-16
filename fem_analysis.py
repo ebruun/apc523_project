@@ -1,6 +1,5 @@
 # external dependencies
 from numpy.linalg import inv
-from numpy.linalg import norm
 import matplotlib.pyplot as plt
 
 # local functions from truss_element
@@ -14,7 +13,6 @@ import random
 
 #LOCAL IMPORTS
 from graphs import Graph, generate_graph
-from graph_plot import plot, plot_iterations, plot_animations
 
 from inputs.input_structure import p3, e3, p_validate, e_validate #pre-defined structures
 
