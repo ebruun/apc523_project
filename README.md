@@ -20,11 +20,11 @@ The project is divided into two main parts: (1) graph realizations and nonlinear
 
 The package requirements are Autograd, Networkx, Numpy, and SciPy. To create a conda environment...
 
-    * with a Mac, use:
+* with Mac, use:
 
 `conda env create -f environment.yml`
 
-    * with Windows, use:
+* with Windows, use:
 
 `conda create --name APC523 --file requirements.txt`
 
