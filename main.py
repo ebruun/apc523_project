@@ -12,8 +12,9 @@ from graph_plot import Plotter
 
 #ANALYSIS STRUCTURE (TURN ONE ON)
 #from inputs.simple import data_in
-from inputs.medium_size import data_in
+#from inputs.medium_size import data_in
 #from inputs.from_paper import data_in
+from inputs.ACADIA_truss import data_in
 
 ##########################################################
 # 1. Create target structure
@@ -23,7 +24,7 @@ from inputs.medium_size import data_in
 # Turn on toggle if want to generate a random structure
 ###
 random.seed(20)
-random_gen = True
+random_gen = False
 
 if random_gen:
     # Random Initial Structure
